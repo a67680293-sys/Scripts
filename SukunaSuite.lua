@@ -1,172 +1,172 @@
--- [[ FORSAKEN OMNI-SUITE: APEX PREDATOR EDITION ]] --
--- A culmination of advanced techniques for Forsaken, focusing on absolute performance, undetectability, and user control.
--- This script is not for public distribution. Use responsibly.
-
+-- [[ FORSAKEN: DIVINE DOMAIN - APEX FINAL ]] --
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
-local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- [[ APEX PREDATOR SETTINGS ]] --
-local SETTINGS = {
-    -- Core Aiming
+-- [[ SETTINGS ]] --
+_G.Settings = {
     Enabled = false,
-    AimKey = Enum.KeyCode.Q,
-    AimMode = "Projectile", -- "Projectile" or "Hitscan" (for future weapons)
-    Prediction = 0.165,      -- Base prediction time in seconds
-    HitboxMultiplier = 1.0,  -- Multiplies the target's hitbox size (1.0 = normal, 1.5 = 50% larger)
-    MaxRange = 350,          -- Max range to acquire a target
-    
-    -- Advanced Targeting
-    TargetPriority = "Closest", -- "Closest", "Health", "Crosshair"
+    HitboxSize = 6,
+    FOVSize = 150, -- Adjust this to make the circle bigger/smaller
+    MaxRange = 60, -- Projects won't track past 60 studs
     TeamCheck = true,
-    VisibilityCheck = true, -- Only aims at targets visible to the camera
-    AntiAimbotEvasion = true, -- Attempts to counter other players' aimbots
-    
-    -- Undetectability & Performance
-    Smoothness = 0.12,      -- How smooth the aim correction is (0 = instant, 1 = very slow)
-    Humanization = 0.08,     -- Adds subtle, human-like micro-movements
-    Randomness = 0.015,     -- Adds slight randomness to prediction to avoid robotic patterns
-    UpdateRate = 0.008,     -- How often the aim is updated (lower is more responsive but more demanding)
-    DynamicFOV = true,      -- Adjusts aim assistance based on target distance
-    SilentAim = true,       -- Aims without moving your camera (if possible with the game's mechanics)
-    
-    -- UI & Visuals
-    ShowFOV = true,
-    FOVSize = 80,
-    FOVColor = Color3.fromRGB(255, 255, 255),
-    ShowTracer = true,
-    TracerColor = Color3.fromRGB(255, 0, 100),
-    AnimeBackground = "rbxassetid://14451731631"
+    Prediction = 0.16,
+    Visuals = true,
+    AnimeImg = "rbxassetid://14451731631"
 }
 
--- [[ SCRIPT STATE ]] --
-local ActiveProjectiles = {}
-local CurrentTarget = nil
-local IsAiming = false
-local LastUpdateTime = 0
-local MouseLocation = UserInputService.GetMouseLocation()
-
--- [[ ADVANCED UI CONSTRUCTION ]] --
+-- [[ UI & FOV CONSTRUCTION ]] --
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
-ScreenGui.Name = HttpService:GenerateGUID(false)
-ScreenGui.ResetOnSpawn = false
-ScreenGui.IgnoreGuiInset = true
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+local FOVCircle = Instance.new("Frame", ScreenGui) -- Visual FOV
+FOVCircle.Size = UDim2.new(0, _G.Settings.FOVSize * 2, 0, _G.Settings.FOVSize * 2)
+FOVCircle.AnchorPoint = Vector2.new(0.5, 0.5)
+FOVCircle.BackgroundColor3 = Color3.new(1, 0, 0)
+FOVCircle.BackgroundTransparency = 0.9
+FOVCircle.Visible = false
+Instance.new("UICorner", FOVCircle).CornerRadius = UDim.new(1, 0)
+Instance.new("UIStroke", FOVCircle).Color = Color3.fromRGB(255, 0, 50)
 
--- Main Window
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 320, 0, 480)
-Main.Position = UDim2.new(0.5, -160, 0.5, -240)
-Main.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+Main.Size = UDim2.new(0, 300, 0, 350)
+Main.Position = UDim2.new(0.5, -150, 0.5, -175)
+Main.BackgroundColor3 = Color3.fromRGB(15, 10, 10)
 Main.BorderSizePixel = 0
 Main.Active = true
 Main.Draggable = true
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", Main)
 
--- Anime Background
-local BackgroundImage = Instance.new("ImageLabel", Main)
-BackgroundImage.Size = UDim2.new(1, 0, 1, 0)
-BackgroundImage.Image = SETTINGS.AnimeBackground
-BackgroundImage.ImageTransparency = 0.6
-BackgroundImage.ScaleType = Enum.ScaleType.Crop
-BackgroundImage.BackgroundTransparency = 1
-local Gradient = Instance.new("UIGradient", BackgroundImage)
-Gradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(20, 0, 30)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
-})
-Gradient.Rotation = 45
+local Bg = Instance.new("ImageLabel", Main)
+Bg.Size = UDim2.new(1, 0, 1, 0)
+Bg.Image = _G.Settings.AnimeImg
+Bg.ImageTransparency = 0.5
+Bg.BackgroundTransparency = 1
+Bg.ScaleType = Enum.ScaleType.Crop
+Instance.new("UICorner", Bg)
 
--- Top Bar
-local TopBar = Instance.new("Frame", Main)
-TopBar.Size = UDim2.new(1, 0, 0, 40)
-TopBar.BackgroundTransparency = 0.6
-TopBar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 12)
+-- Sukuna Minimize Button
+local SukunaBtn = Instance.new("ImageButton", ScreenGui)
+SukunaBtn.Size = UDim2.new(0, 70, 0, 70)
+SukunaBtn.Image = _G.Settings.AnimeImg
+SukunaBtn.Visible = false
+Instance.new("UICorner", SukunaBtn).CornerRadius = UDim.new(1, 0)
 
-local Title = Instance.new("TextLabel", TopBar)
-Title.Size = UDim2.new(0.8, 0, 1, 0)
-Title.Position = UDim2.new(0.05, 0, 0, 0)
-Title.Text = "APEX PREDATOR SUITE"
-Title.TextColor3 = Color3.fromRGB(255, 60, 120)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.BackgroundTransparency = 1
+-- [[ LOGIC ENGINE ]] --
 
--- Minimize Button
-local HideBtn = Instance.new("TextButton", TopBar)
-HideBtn.Size = UDim2.new(0, 30, 0, 30)
-HideBtn.Position = UDim2.new(0.9, 0, 0.15, 0)
-HideBtn.Text = "_"
-HideBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-HideBtn.TextColor3 = Color3.new(1, 1, 1)
-HideBtn.Font = Enum.Font.GothamBold
-Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 5)
+local function IsInFOV(targetPos)
+    local screenPos, onScreen = Camera:WorldToViewportPoint(targetPos)
+    if onScreen then
+        local mousePos = UserInputService:GetMouseLocation()
+        local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
+        return dist <= _G.Settings.FOVSize
+    end
+    return false
+end
 
--- Sukuna Circular Icon (Minimized State)
-local SukunaIcon = Instance.new("ImageButton", ScreenGui)
-SukunaIcon.Size = UDim2.new(0, 70, 0, 70)
-SukunaIcon.Image = SETTINGS.AnimeBackground
-SukunaIcon.Visible = false
-SukunaIcon.BackgroundTransparency = 1
-Instance.new("UICorner", SukunaIcon).CornerRadius = UDim.new(1, 0)
-local IconStroke = Instance.new("UIStroke", SukunaIcon)
-IconStroke.Thickness = 2
-IconStroke.Color = Color3.fromRGB(255, 50, 120)
+local function GetBestTarget()
+    local target = nil
+    local lastDist = _G.Settings.MaxRange
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            if _G.Settings.TeamCheck and p.Team == LocalPlayer.Team then continue end
+            local hrp = p.Character.HumanoidRootPart
+            local dist = (hrp.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+            if dist < lastDist and IsInFOV(hrp.Position) then
+                target = hrp
+                lastDist = dist
+            end
+        end
+    end
+    return target
+end
 
--- Main Toggle Button
+-- Jane Doe Magnetism (Jar/Axe)
+workspace.ChildAdded:Connect(function(child)
+    if not _G.Settings.Enabled then return end
+    task.wait(0.02)
+    local n = child.Name:lower()
+    if n:find("jar") or n:find("axe") or n:find("crystal") then
+        local target = GetBestTarget()
+        if target then
+            RunService.Heartbeat:Connect(function()
+                if child and child.Parent and target.Parent then
+                    local pred = target.Position + (target.AssemblyLinearVelocity * _G.Settings.Prediction)
+                    child.AssemblyLinearVelocity = (pred - child.Position).Unit * child.AssemblyLinearVelocity.Magnitude
+                end
+            end)
+        end
+    end
+end)
+
+-- Hitbox System
+local function UpdateHitboxes()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = p.Character.HumanoidRootPart
+            if _G.Settings.Enabled then
+                hrp.Size = Vector3.new(1, 1, 1) * _G.Settings.HitboxSize
+                hrp.Transparency = 0.6
+                hrp.Color = (p.Team and p.Team.Name:lower():find("killer")) and Color3.new(1,0,0) or Color3.new(0,1,0)
+                hrp.Material = Enum.Material.Neon
+                hrp.CanCollide = false
+            else
+                hrp.Size = Vector3.new(2, 2, 1)
+                hrp.Transparency = 1
+            end
+        end
+    end
+end
+
+-- [[ UI SLIDERS ]] --
 local Toggle = Instance.new("TextButton", Main)
-Toggle.Size = UDim2.new(0.9, 0, 0, 50)
-Toggle.Position = UDim2.new(0.05, 0, 0.15, 0)
-Toggle.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-Toggle.Text = "SUITE: STANDBY"
-Toggle.TextColor3 = Color3.fromRGB(200, 200, 200)
-Toggle.Font = Enum.Font.GothamBold
-Toggle.TextSize = 18
-Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0, 6)
-local ToggleStroke = Instance.new("UIStroke", Toggle)
-ToggleStroke.Color = Color3.fromRGB(255, 50, 120)
-ToggleStroke.Thickness = 2
+Toggle.Size = UDim2.new(0.9, 0, 0, 40)
+Toggle.Position = UDim2.new(0.05, 0, 0.2, 0)
+Toggle.Text = "DOMAIN: OFF"
+Toggle.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+Toggle.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", Toggle)
 
--- Settings Container
-local SettingsContainer = Instance.new("ScrollingFrame", Main)
-SettingsContainer.Size = UDim2.new(0.9, 0, 0, 320)
-SettingsContainer.Position = UDim2.new(0.05, 0, 0.28, 0)
-SettingsContainer.BackgroundTransparency = 1
-SettingsContainer.ScrollBarThickness = 4
-SettingsContainer.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
-local SettingsListLayout = Instance.new("UIListLayout", SettingsContainer)
-SettingsListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-SettingsListLayout.Padding = UDim.new(0, 5)
+local SizeBtn = Instance.new("TextButton", Main)
+SizeBtn.Size = UDim2.new(0.9, 0, 0, 40)
+SizeBtn.Position = UDim2.new(0.05, 0, 0.4, 0)
+SizeBtn.Text = "HITBOX SIZE: 6"
+SizeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+SizeBtn.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", SizeBtn)
 
--- Helper function to create settings
-local function createSetting(layoutOrder, labelText, defaultValue, isSlider, callback)
-    local SettingFrame = Instance.new("Frame", SettingsContainer)
-    SettingFrame.Size = UDim2.new(1, 0, 0, 30)
-    SettingFrame.BackgroundTransparency = 1
-    SettingFrame.LayoutOrder = layoutOrder
+local FOVBtn = Instance.new("TextButton", Main)
+FOVBtn.Size = UDim2.new(0.9, 0, 0, 40)
+FOVBtn.Position = UDim2.new(0.05, 0, 0.6, 0)
+FOVBtn.Text = "FOV RADIUS: 150"
+FOVBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+FOVBtn.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", FOVBtn)
 
-    local Label = Instance.new("TextLabel", SettingFrame)
-    Label.Size = UDim2.new(0.5, 0, 1, 0)
-    Label.Position = UDim2.new(0, 0, 0, 0)
-    Label.Text = labelText
-    Label.TextColor3 = Color3.fromRGB(220, 220, 220)
-    Label.Font = Enum.Font.Gotham
-    Label.BackgroundTransparency = 1
-    Label.TextSize = 13
-    Label.TextXAlignment = Enum.TextXAlignment.Left
+-- [[ FINAL LOGIC ]] --
+Toggle.MouseButton1Click:Connect(function()
+    _G.Settings.Enabled = not _G.Settings.Enabled
+    Toggle.Text = _G.Settings.Enabled and "DOMAIN: ACTIVE" or "DOMAIN: OFF"
+    Toggle.BackgroundColor3 = _G.Settings.Enabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
+    FOVCircle.Visible = _G.Settings.Enabled
+end)
 
-    local Input
-    if isSlider then
-        Input = Instance.new("TextBox", SettingFrame)
-        Input.Size = UDim2.new(0.4, 0, 1, 0)
-        Input.Position = UDim2.new(0.55, 0, 0, 0)
-        Input.Text = tostring(defaultValue)
-        Input.BackgroundColor3 = Color3.from
+SizeBtn.MouseButton1Click:Connect(function()
+    _G.Settings.HitboxSize = _G.Settings.HitboxSize + 2
+    if _G.Settings.HitboxSize > 16 then _G.Settings.HitboxSize = 2 end
+    SizeBtn.Text = "HITBOX SIZE: " .. _G.Settings.HitboxSize
+end)
+
+FOVBtn.MouseButton1Click:Connect(function()
+    _G.Settings.FOVSize = _G.Settings.FOVSize + 50
+    if _G.Settings.FOVSize > 400 then _G.Settings.FOVSize = 50 end
+    FOVBtn.Text = "FOV RADIUS: " .. _G.Settings.FOVSize
+    FOVCircle.Size = UDim2.new(0, _G.Settings.FOVSize * 2, 0, _G.Settings.FOVSize * 2)
+end)
+
+RunService.RenderStepped:Connect(function()
+    FOVCircle.Position = UserInputService:GetMouseLocation()
+    if _G.Settings.Enabled then pcall(UpdateHitboxes) end
+end)
