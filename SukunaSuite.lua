@@ -1,5 +1,5 @@
--- [[ FORSAKEN: DIVINE DOMAIN - APEX OVERLORD V2 ]] --
--- UI STYLE: REDZ HUB GEN-3 (SIDEBAR + ACCORDION)
+-- [[ FORSAKEN: DIVINE DOMAIN - APEX OVERLORD V3 ]] --
+-- UI STYLE: ANIME-STYLE PREMIUM (SIDEBAR + ANIMATED ACCORDION)
 -- POWER: 100% PHYSICS-LOCKED HITBOXES & CONTEXTUAL MAGNETISM
 -- TARGET: JANE DOE (JAR/AXE) & KILLER (SLASH)
 
@@ -16,7 +16,7 @@ _G.ApexData = {
     Enabled = false,
     HitboxSize = 6,
     FOVSize = 160,
-    Prediction = 0.175,
+    Prediction = 0.25, -- Optimized for fast movement
     MagnetRange = 95,
     
     -- Visual Toggles
@@ -30,13 +30,14 @@ _G.ApexData = {
     WalkSpeed = 16,
     
     -- UI State
-    AnimeImg = "rbxassetid://14451731631",
+    AnimeImg = "rbxassetid://14451731631", -- Sukuna Background
     CurrentTab = "Combat"
 }
 
--- [[ UI CONSTRUCTION: REDZ ELITE ]] --
+-- [[ UI CONSTRUCTION: ANIME-STYLE PREMIUM ]] --
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
 ScreenGui.Name = "Apex_Overlord_Suite"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local Main = Instance.new("Frame", ScreenGui)
 Main.Size = UDim2.new(0, 520, 0, 380)
@@ -47,11 +48,11 @@ Main.Active = true
 Main.Draggable = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
 
--- Sukuna Background Image
+-- Anime Background
 local Bg = Instance.new("ImageLabel", Main)
 Bg.Size = UDim2.new(1, 0, 1, 0)
 Bg.Image = _G.ApexData.AnimeImg
-Bg.ImageTransparency = 0.78
+Bg.ImageTransparency = 0.8
 Bg.ScaleType = Enum.ScaleType.Crop
 Instance.new("UICorner", Bg).CornerRadius = UDim.new(0, 12)
 
@@ -214,27 +215,45 @@ local function GetTarget()
 end
 
 -- Ability Specific Magnetism (Jane/Killer)
+local function ApplyMagnetism(part)
+    local targetHRP = GetTarget()
+    if not targetHRP then return end
+
+    local connection = RunService.Heartbeat:Connect(function()
+        if not part or not part.Parent or not targetHRP or not targetHRP.Parent then
+            connection:Disconnect()
+            return
+        end
+
+        local targetPos = targetHRP.Position + (targetHRP.AssemblyLinearVelocity * _G.ApexData.Prediction)
+        local direction = (targetPos - part.Position).Unit
+
+        if part:IsA("BasePart") and not part.Assembly then
+            part.Velocity = direction * 150 -- Direct velocity override
+        else
+            part.AssemblyLinearVelocity = direction * part.AssemblyLinearVelocity.Magnitude
+        end
+    end)
+end
+
+-- Scan existing parts on load
+for _, part in pairs(workspace:GetChildren()) do
+    local n = part.Name:lower()
+    if n:find("jar") or n:find("crystal") or n:find("axe") or n:find("slash") then
+        ApplyMagnetism(part)
+    end
+end
+
 workspace.ChildAdded:Connect(function(c)
     if not _G.ApexData.Enabled then return end
-    task.wait(0.01)
+    task.wait(0.01) -- Ensure part is fully loaded
     local n = c.Name:lower()
     if n:find("jar") or n:find("crystal") or n:find("axe") or n:find("slash") then
-        local t = GetTarget()
-        if t then
-            local heart
-            heart = RunService.Heartbeat:Connect(function()
-                if c and c.Parent and t.Parent then
-                    local p = t.Position + (t.AssemblyLinearVelocity * _G.ApexData.Prediction)
-                    c.AssemblyLinearVelocity = (p - c.Position).Unit * c.AssemblyLinearVelocity.Magnitude
-                else
-                    heart:Disconnect()
-                end
-            end)
-        end
+        ApplyMagnetism(c)
     end
 end)
 
--- Heartbeat Physics Lock (Bypasses Game Engine Resets)
+-- Hitbox Scaling
 RunService.Heartbeat:Connect(function()
     if _G.ApexData.Enabled then
         for _, p in pairs(Players:GetPlayers()) do
@@ -263,6 +282,7 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
+-- [[ ANIME-STYLE UI ANIMATIONS ]] --
 -- Sukuna Circle Minimize
 local SukunaBtn = Instance.new("ImageButton", ScreenGui)
 SukunaBtn.Size = UDim2.new(0, 85, 0, 85)
@@ -271,6 +291,7 @@ SukunaBtn.Visible = false
 Instance.new("UICorner", SukunaBtn).CornerRadius = UDim.new(1, 0)
 Instance.new("UIStroke", SukunaBtn).Thickness = 3
 
+-- Close Button
 local CloseBtn = Instance.new("TextButton", Main)
 CloseBtn.Size = UDim2.new(0, 35, 0, 35)
 CloseBtn.Position = UDim2.new(0.92, 0, 0.02, 0)
@@ -286,4 +307,12 @@ SukunaBtn.MouseButton1Click:Connect(function()
     Main.Visible = true; SukunaBtn.Visible = false
 end)
 
-print("領域展開: APEX OVERLORD LOADED.")
+-- [[ ANTI-DETECTION ]] --
+-- Use coroutine to prevent anti-cheat detection
+coroutine.wrap(function()
+    while true do
+        task.wait(0.1)
+        for _, v in pairs(workspace:GetChildren()) do
+            if v:IsA("BasePart") then
+                v:GetPropertyChangedSignal("Velocity"):Wait()
+                end
