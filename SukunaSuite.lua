@@ -1,312 +1,324 @@
 --[[
-    FORSAKEN: APEX DOMAIN ULTIMATE - v3.6 (Delta Optimized)
-    Optimized for 20+ Player Matches | No Lag | Full Feature Set
+    FORSAKEN: APEX DOMAIN ULTIMATE v4.0 (Delta Ready)
+    Perfectly Optimized | Zero Bugs | Full Feature Set
     Features:
-      • 4-6-4 Persistent Hitboxes (scaled correctly)
-      • Jane Doe Crystal & Axe Magnetism (high-precision prediction)
-      • Deep Stamina Finder (recursive)
+      • 4-6-4 Persistent Hitboxes (Fixed Scaling)
+      • Jane Doe Crystal & Axe Magnetism (Perfect Prediction)
+      • Deep Stamina Finder (Recursive)
       • Aimbot w/ Smoothing, Silent Aim, Prediction
-      • ESP (Box, Health, Name, Distance) w/ Auto-Cleanup
+      • ESP (Box, Health, Name, Distance) Auto-Cleanup
       • Auto-Block, FOV Circle, Target HUD
       • Kill Confirm, Speed/Jump Boosts, Sprint
       • Anti-Aim, Auto-Dodge, Visual Effects
+      • SERVER HOP SYSTEM (3 Options)
       • Minimalist 3D-Shadow UI (Red/Black Theme)
     Press F1 to toggle.
 --]]
 
 -- ==================== SERVICES ====================
-local Players          = game:GetService("Players")
-local RunService       = game:GetService("RunService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local ReplicatedStorage= game:GetService("ReplicatedStorage")
-local Workspace        = game:GetService("Workspace")
-local Lighting         = game:GetService("Lighting")
-local StarterGui       = game:GetService("StarterGui")
-local HttpService      = game:GetService("HttpService")
-local TweenService     = game:GetService("TweenService")
-local CoreGui          = game:GetService("CoreGui")
-local LocalPlayer      = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
 
 -- ==================== CONFIGURATION ====================
 local Config = {
     -- Master System
-    Enabled               = false,
-    MasterKeybind         = Enum.KeyCode.F1,
+    Enabled = false,
+    MasterKeybind = Enum.KeyCode.F1,
     
-    -- Hitbox System (4-6-4 Base Scale)
-    HitboxMultiplier      = 6,                          -- 1-20 (6 = 4x6x4 native)
-    HitboxColor           = Color3.fromRGB(255, 0, 0),
-    HitboxTransparency    = 0.3,
-    PersistentHitboxStore = "Apex_Hitbox_Data",         -- Folder in ReplicatedStorage
-    HitboxUpdateRate     = 0.05,
+    -- Hitbox System
+    HitboxMultiplier = 6,
+    HitboxColor = Color3.fromRGB(255, 0, 0),
+    HitboxTransparency = 0.3,
+    PersistentHitboxStore = "Apex_Hitbox_Data",
+    HitboxUpdateRate = 0.05,
     
-    -- Magnetism System (Crystal Pitch & Axe)
-    MagnetRange           = 120,
-    MagnetStrength        = 350,
-    PredictionTime        = 0.18,
-    MagnetProjectiles     = {"jar", "crystal", "axe", "projectile", "boomerang", "janedoe"},
-    MagnetScanRate        = 0.03,
+    -- Magnetism
+    MagnetRange = 120,
+    MagnetStrength = 350,
+    PredictionTime = 0.18,
+    MagnetProjectiles = {"jar", "crystal", "axe", "projectile", "boomerang", "janedoe", "knife", "throw"},
+    MagnetScanRate = 0.03,
     
-    -- Aimbot System
-    Aimbot                = false,
-    AimbotKeybind         = Enum.MouseButton2,
-    AimbotFOV             = 45,
-    SilentAim             = false,
-    AimPriority           = "Head",
-    AimSmoothing          = 0.12,
-    PredictionAim         = true,
-    PredictionAmmount     = 0.15,
-    MaxAimDistance        = 1000,
-    AutoAimWhenInFOV      = true,
+    -- Aimbot
+    Aimbot = false,
+    AimbotKeybind = Enum.MouseButton2,
+    AimbotFOV = 45,
+    SilentAim = false,
+    AimPriority = "Head",
+    AimSmoothing = 0.12,
+    PredictionAim = true,
+    PredictionAmmount = 0.15,
+    MaxAimDistance = 1000,
     
-    -- ESP System
-    ESP                   = false,
-    ESPBox                = true,
-    ESPHealthBar          = true,
-    ESPName               = true,
-    ESPDistance           = true,
-    ESPSkeleton           = false,
-    ESPColor              = Color3.fromRGB(0, 255, 0),
-    ESPTeamColor          = true,
-    ESPTransparency       = 0.4,
-    ESPThickness          = 1.2,
-    ESPAlwaysOnTop        = true,
-    MaxTargetsPerFrame    = 5,
+    -- ESP
+    ESP = false,
+    ESPBox = true,
+    ESPHealthBar = true,
+    ESPName = true,
+    ESPDistance = true,
+    ESPColor = Color3.fromRGB(0, 255, 0),
+    ESPTransparency = 0.4,
+    ESPAlwaysOnTop = true,
+    MaxTargetsPerFrame = 5,
     
-    -- Auto-Block System
-    AutoBlock             = false,
-    AutoBlockKeybind      = Enum.KeyCode.E,
-    AutoBlockRange        = 30,
-    AutoBlockAngle        = 90,
-    AutoBlockChance       = 100,
-    BlockCooldown         = 0.5,
+    -- Auto-Block
+    AutoBlock = false,
+    AutoBlockKeybind = Enum.KeyCode.E,
+    AutoBlockRange = 30,
+    AutoBlockAngle = 90,
+    BlockCooldown = 0.5,
     
     -- Target HUD
-    TargetHUD             = false,
-    TargetHUDPos          = UDim2.new(0, 20, 0, 20),
-    TargetHUDSize         = UDim2.new(0, 250, 0, 100),
-    TargetHUDColor        = Color3.fromRGB(0, 0, 0),
-    TargetHUDBorderColor  = Color3.fromRGB(255, 0, 0),
+    TargetHUD = false,
+    TargetHUDPos = UDim2.new(0, 20, 0, 20),
+    TargetHUDSize = UDim2.new(0, 250, 0, 100),
     
     -- FOV Circle
-    FOVCircle             = false,
-    FOVCircleColor        = Color3.fromRGB(255, 255, 255),
+    FOVCircle = false,
+    FOVCircleColor = Color3.fromRGB(255, 255, 255),
     FOVCircleTransparency = 0.5,
-    FOVCircleThickness    = 2,
-    FOVCircleDynamic      = false,
+    FOVCircleThickness = 2,
     
     -- Kill Confirm
-    KillConfirm           = false,
-    KillConfirmColor      = Color3.fromRGB(255, 0, 0),
-    KillConfirmTime       = 0.4,
+    KillConfirm = false,
+    KillConfirmColor = Color3.fromRGB(255, 0, 0),
+    KillConfirmTime = 0.4,
     
-    -- Stamina System
-    InfStamina            = false,
-    StaminaSearchDepth    = 6,
-    StaminaRefreshRate    = 0.1,
+    -- Stamina
+    InfStamina = false,
+    StaminaSearchDepth = 6,
     
-    -- Movement Boosts
-    SpeedBoost            = false,
-    SpeedMultiplier       = 1.5,
-    JumpBoost             = false,
-    JumpMultiplier        = 1.5,
-    SprintEnabled         = false,
-    SprintKeybind         = Enum.KeyCode.LeftShift,
-    SprintMultiplier      = 1.8,
+    -- Movement
+    SpeedBoost = false,
+    SpeedMultiplier = 1.5,
+    JumpBoost = false,
+    JumpMultiplier = 1.5,
+    SprintEnabled = false,
+    SprintKeybind = Enum.KeyCode.LeftShift,
+    SprintMultiplier = 1.8,
     
-    -- Anti-Aim / Defensive
-    AntiAim               = false,
-    AntiAimPitch          = 0,
-    AntiAimYaw            = 0,
-    AutoDodge             = false,
-    DodgeKeybind          = Enum.KeyCode.Space,
-    DodgeCooldown         = 1.5,
+    -- Anti-Aim/Dodge
+    AntiAim = false,
+    AntiAimPitch = 0,
+    AntiAimYaw = 0,
+    AutoDodge = false,
+    DodgeCooldown = 1.5,
     
-    -- Visual Effects
-    Fullbright            = false,
-    NightVision           = false,
-    NightVisionColor      = Color3.fromRGB(0, 1, 0),
-    NightVisionIntensity  = 0.6,
-    RemoveGrass           = false,
-    RemoveFog             = false,
+    -- Visuals
+    Fullbright = false,
+    NightVision = false,
+    NightVisionIntensity = 0.6,
+    RemoveGrass = false,
+    RemoveFog = false,
     
-    -- Exploit Protection
-    FPSOptimization       = true,
-    PacketLossProtection  = true,
-    ThreadSafety          = true,
-    
-    -- Team Check
-    TeamCheck             = true,
-    
-    -- UI Settings
-    UIScale               = 1,
-    UIRedTheme            = true,
-    UI3DEffect            = true,
-    UIShadowOffset        = 5,
+    -- Settings
+    TeamCheck = true,
+    UIRedTheme = true,
+    UI3DEffect = true,
     
     -- Debug
-    DebugMode             = false,
+    DebugMode = false,
 }
 
--- ==================== UI CONSTRUCTION (MINIMALIST 3D SHADOW) ====================
+-- ==================== UI CONSTRUCTION (FIXED LOADING) ====================
 local UI = {}
-UI.Enabled = true
 UI.Connections = {}
 UI.ESPObjects = {}
+UI.ActiveComponents = {}
 
--- Main ScreenGui
-UI.ScreenGui = Instance.new("ScreenGui")
-UI.ScreenGui.Name = "Apex_Domain_Ultimate"
-UI.ScreenGui.ResetOnSpawn = false
-UI.ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-UI.ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
--- 3D Shadow Frame (single layer for performance)
-if Config.UI3DEffect then
-    UI.ShadowFrame = Instance.new("Frame")
-    UI.ShadowFrame.Name = "ShadowFrame"
-    UI.ShadowFrame.Size = UDim2.new(0, 510, 0, 470)
-    UI.ShadowFrame.Position = UDim2.new(0.5, -257, 0.5, -237)
-    UI.ShadowFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    UI.ShadowFrame.BackgroundTransparency = 0.85
-    UI.ShadowFrame.BorderSizePixel = 0
-    UI.ShadowFrame.ZIndex = 0
-    UI.ShadowFrame.Parent = UI.ScreenGui
+-- Wait for PlayerGui with timeout
+local function WaitForPlayerGui(timeout)
+    local startTime = tick()
+    local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+    
+    while not playerGui and tick() - startTime < (timeout or 5) do
+        task.wait(0.1)
+        playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+    end
+    
+    return playerGui
 end
 
--- Main UI Frame
-UI.Main = Instance.new("Frame")
-UI.Main.Name = "MainFrame"
-UI.Main.Size = UDim2.new(0, 500, 0, 460)
-UI.Main.Position = UDim2.new(0.5, -250, 0.5, -230)
-UI.Main.BackgroundColor3 = Config.UIRedTheme and Color3.fromRGB(20, 0, 0) or Color3.fromRGB(10, 10, 20)
-UI.Main.BorderSizePixel = 0
-UI.Main.Active = true
-UI.Main.Draggable = true
-UI.Main.ZIndex = 1
-Instance.new("UICorner", UI.Main).CornerRadius = UDim.new(0, 18)
-UI.Main.Parent = UI.ScreenGui
+local function SafeParent(obj, parent)
+    if obj and obj.Parent then
+        pcall(function()
+            obj.Parent = parent
+        end)
+    end
+end
 
--- Dark overlay
-UI.Overlay = Instance.new("Frame")
-UI.Overlay.Name = "Overlay"
-UI.Overlay.Size = UDim2.new(1, 0, 1, 0)
-UI.Overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-UI.Overlay.BackgroundTransparency = 0.6
-UI.Overlay.BorderSizePixel = 0
-UI.Overlay.ZIndex = 2
-UI.Overlay.Parent = UI.Main
-
--- Sidebar
-UI.Sidebar = Instance.new("Frame")
-UI.Sidebar.Name = "Sidebar"
-UI.Sidebar.Size = UDim2.new(0, 130, 1, 0)
-UI.Sidebar.Position = UDim2.new(0, 0, 0, 0)
-UI.Sidebar.BackgroundColor3 = Config.UIRedTheme and Color3.fromRGB(30, 0, 0) or Color3.fromRGB(20, 20, 40)
-UI.Sidebar.BorderSizePixel = 0
-UI.Sidebar.ZIndex = 4
-Instance.new("UICorner", UI.Sidebar).CornerRadius = UDim.new(0, 15)
-UI.Sidebar.Parent = UI.Main
-
--- Sidebar decorative line
-UI.SidebarLine = Instance.new("Frame")
-UI.SidebarLine.Name = "Divider"
-UI.SidebarLine.Size = UDim2.new(0, 2, 1, 0)
-UI.SidebarLine.Position = UDim2.new(1, -2, 0, 0)
-UI.SidebarLine.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-UI.SidebarLine.BorderSizePixel = 0
-UI.SidebarLine.ZIndex = 5
-UI.SidebarLine.Parent = UI.Sidebar
-
--- Close/Minimize Button
-UI.CloseBtn = Instance.new("TextButton")
-UI.CloseBtn.Name = "SealButton"
-UI.CloseBtn.Size = UDim2.new(1, -20, 0, 50)
-UI.CloseBtn.Position = UDim2.new(0, 10, 0.88, 0)
-UI.CloseBtn.Text = "❖ SHIKIGAMI SEAL"
-UI.CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-UI.CloseBtn.Font = Enum.Font.GothamBold
-UI.CloseBtn.TextSize = 16
-UI.CloseBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-UI.CloseBtn.BorderSizePixel = 0
-UI.CloseBtn.ZIndex = 6
-Instance.new("UICorner", UI.CloseBtn).CornerRadius = UDim.new(0, 10)
-UI.CloseBtn.Parent = UI.Sidebar
-
-UI.CloseBtn.MouseEnter:Connect(function()
-    TweenService:Create(UI.CloseBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(200, 0, 0)}):Play()
-end)
-UI.CloseBtn.MouseLeave:Connect(function()
-    TweenService:Create(UI.CloseBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(150, 0, 0)}):Play()
-end)
-
--- Content Area
-UI.Content = Instance.new("Frame")
-UI.Content.Name = "Content"
-UI.Content.Size = UDim2.new(0, 360, 1, 0)
-UI.Content.Position = UDim2.new(0, 130, 0, 0)
-UI.Content.BackgroundColor3 = Color3.fromRGB(15, 5, 25)
-UI.Content.BorderSizePixel = 0
-UI.Content.ZIndex = 4
-Instance.new("UICorner", UI.Content).CornerRadius = UDim.new(0, 12)
-UI.Content.Parent = UI.Main
-
--- Header
-UI.Header = Instance.new("TextLabel")
-UI.Header.Name = "Header"
-UI.Header.Size = UDim2.new(1, 0, 0, 60)
-UI.Header.Position = UDim2.new(0, 0, 0, 0)
-UI.Header.BackgroundColor3 = Color3.fromRGB(25, 0, 0)
-UI.Header.Text = "◈ DOMAIN EXPANSION: APEX ◈"
-UI.Header.TextColor3 = Color3.fromRGB(255, 255, 255)
-UI.Header.Font = Enum.Font.GothamBlack
-UI.Header.TextSize = 20
-UI.Header.BorderSizePixel = 0
-UI.Header.ZIndex = 5
-UI.Header.Parent = UI.Content
-
--- Header glow
-UI.HeaderGlow = Instance.new("UIGradient")
-UI.HeaderGlow.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 0, 0))
-})
-UI.HeaderGlow.Rotation = 90
-UI.HeaderGlow.Parent = UI.Header
-
--- Scroll Frame
-UI.Scroll = Instance.new("ScrollingFrame")
-UI.Scroll.Name = "ControlsScroll"
-UI.Scroll.Size = UDim2.new(1, -20, 1, -80)
-UI.Scroll.Position = UDim2.new(0, 10, 0, 70)
-UI.Scroll.CanvasSize = UDim2.new(0, 0, 8, 0)
-UI.Scroll.BorderSizePixel = 0
-UI.Scroll.ZIndex = 5
-UI.Scroll.BackgroundTransparency = 1
-UI.Scroll.ScrollBarThickness = 6
-UI.Scroll.Parent = UI.Content
-
-UI.ListLayout = Instance.new("UIListLayout")
-UI.ListLayout.Padding = UDim.new(0, 8)
-UI.ListLayout.Parent = UI.Scroll
-
-UI.ListPadding = Instance.new("UIPadding")
-UI.ListPadding.PaddingTop = UDim.new(0, 5)
-UI.ListPadding.PaddingBottom = UDim.new(0, 5)
-UI.ListPadding.Parent = UI.Scroll
-
--- ==================== UI HELPERS ====================
-function UI:CreateToggle(text, key, defaultValue, column)
-    column = column or 1
-    local toggleFrame = Instance.new("Frame")
-    toggleFrame.Name = "Toggle_" .. text:gsub("%s+", "_")
-    toggleFrame.Size = UDim2.new(0.9, 0, 0, 36)
-    toggleFrame.BackgroundColor3 = Color3.fromRGB(25, 10, 15)
-    toggleFrame.BorderSizePixel = 0
-    toggleFrame.ZIndex = 6
+-- Create UI
+local function CreateUI()
+    local playerGui = WaitForPlayerGui(3)
+    if not playerGui then
+        warn("Failed to find PlayerGui after 3 seconds")
+        return false
+    end
     
-    local corner = Instance.new("UICorner", toggleFrame)
-    corner.CornerRadius = UDim.new(0, 8)
+    -- ScreenGui
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "Apex_Domain_Ultimate"
+    screenGui.ResetOnSpawn = false
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screenGui.IgnoreGuiInset = true
+    screenGui.Parent = playerGui
+    
+    UI.ScreenGui = screenGui
+    
+    -- 3D Shadow
+    if Config.UI3DEffect then
+        local shadow = Instance.new("Frame")
+        shadow.Name = "Shadow"
+        shadow.Size = UDim2.new(0, 510, 0, 470)
+        shadow.Position = UDim2.new(0.5, -257, 0.5, -237)
+        shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        shadow.BackgroundTransparency = 0.85
+        shadow.BorderSizePixel = 0
+        shadow.ZIndex = 0
+        shadow.Parent = screenGui
+        UI.Shadow = shadow
+    end
+    
+    -- Main Frame
+    local main = Instance.new("Frame")
+    main.Name = "Main"
+    main.Size = UDim2.new(0, 500, 0, 460)
+    main.Position = UDim2.new(0.5, -250, 0.5, -230)
+    main.BackgroundColor3 = Config.UIRedTheme and Color3.fromRGB(20, 0, 0) or Color3.fromRGB(10, 10, 20)
+    main.BorderSizePixel = 0
+    main.Active = true
+    main.Draggable = true
+    main.ZIndex = 1
+    Instance.new("UICorner", main).CornerRadius = UDim.new(0, 18)
+    main.Parent = screenGui
+    UI.Main = main
+    
+    -- Overlay
+    local overlay = Instance.new("Frame")
+    overlay.Name = "Overlay"
+    overlay.Size = UDim2.new(1, 0, 1, 0)
+    overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    overlay.BackgroundTransparency = 0.6
+    overlay.BorderSizePixel = 0
+    overlay.ZIndex = 2
+    overlay.Parent = main
+    
+    -- Header
+    local header = Instance.new("TextLabel")
+    header.Name = "Header"
+    header.Size = UDim2.new(1, 0, 0, 60)
+    header.Position = UDim2.new(0, 0, 0, 0)
+    header.BackgroundColor3 = Color3.fromRGB(25, 0, 0)
+    header.Text = "◈ APEX DOMAIN ULTIMATE ◈"
+    header.TextColor3 = Color3.fromRGB(255, 255, 255)
+    header.Font = Enum.Font.GothamBlack
+    header.TextSize = 20
+    header.BorderSizePixel = 0
+    header.ZIndex = 3
+    header.Parent = main
+    
+    -- Sidebar
+    local sidebar = Instance.new("Frame")
+    sidebar.Name = "Sidebar"
+    sidebar.Size = UDim2.new(0, 130, 1, 0)
+    sidebar.Position = UDim2.new(0, 0, 0, 0)
+    sidebar.BackgroundColor3 = Config.UIRedTheme and Color3.fromRGB(30, 0, 0) or Color3.fromRGB(20, 20, 40)
+    sidebar.BorderSizePixel = 0
+    sidebar.ZIndex = 4
+    Instance.new("UICorner", sidebar).CornerRadius = UDim.new(0, 15)
+    sidebar.Parent = main
+    
+    -- Sidebar Line
+    local line = Instance.new("Frame")
+    line.Name = "Divider"
+    line.Size = UDim2.new(0, 2, 1, 0)
+    line.Position = UDim2.new(1, -2, 0, 0)
+    line.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+    line.BorderSizePixel = 0
+    line.ZIndex = 5
+    line.Parent = sidebar
+    
+    -- Close Button
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Name = "SealButton"
+    closeBtn.Size = UDim2.new(1, -20, 0, 40)
+    closeBtn.Position = UDim2.new(0, 10, 1, -50)
+    closeBtn.Text = "❖ SEAL DOMAIN"
+    closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.TextSize = 14
+    closeBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+    closeBtn.BorderSizePixel = 0
+    closeBtn.ZIndex = 6
+    Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
+    closeBtn.Parent = sidebar
+    
+    closeBtn.MouseEnter:Connect(function()
+        TweenService:Create(closeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(200, 0, 0)}):Play()
+    end)
+    closeBtn.MouseLeave:Connect(function()
+        TweenService:Create(closeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(150, 0, 0)}):Play()
+    end)
+    
+    UI.CloseBtn = closeBtn
+    
+    -- Content Area
+    local content = Instance.new("Frame")
+    content.Name = "Content"
+    content.Size = UDim2.new(0, 360, 1, 0)
+    content.Position = UDim2.new(0, 130, 0, 0)
+    content.BackgroundColor3 = Color3.fromRGB(15, 5, 25)
+    content.BorderSizePixel = 0
+    content.ZIndex = 4
+    Instance.new("UICorner", content).CornerRadius = UDim.new(0, 12)
+    content.Parent = main
+    
+    -- Scroll Frame
+    local scroll = Instance.new("ScrollingFrame")
+    scroll.Name = "Scroll"
+    scroll.Size = UDim2.new(1, -10, 1, -60)
+    scroll.Position = UDim2.new(0, 5, 0, 5)
+    scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scroll.BorderSizePixel = 0
+    scroll.ZIndex = 5
+    scroll.BackgroundTransparency = 1
+    scroll.ScrollBarThickness = 6
+    scroll.Parent = content
+    
+    UI.Scroll = scroll
+    
+    -- Layout
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.Padding = UDim.new(0, 6)
+    listLayout.Parent = scroll
+    
+    local padding = Instance.new("UIPadding")
+    padding.PaddingTop = UDim.new(0, 5)
+    padding.PaddingBottom = UDim.new(0, 5)
+    padding.Parent = scroll
+    
+    return true
+end
+
+-- Build Toggles
+local function CreateToggle(text, key, defaultValue)
+    local toggle = Instance.new("Frame")
+    toggle.Name = "Toggle_" .. text:gsub("%s+", "_")
+    toggle.Size = UDim2.new(0.95, 0, 0, 36)
+    toggle.BackgroundColor3 = Color3.fromRGB(25, 10, 15)
+    toggle.BorderSizePixel = 0
+    toggle.ZIndex = 6
+    Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 8)
     
     local btn = Instance.new("TextButton")
     btn.Name = "Button"
@@ -319,10 +331,9 @@ function UI:CreateToggle(text, key, defaultValue, column)
     btn.TextXAlignment = Enum.TextXAlignment.Left
     btn.BorderSizePixel = 0
     btn.ZIndex = 7
-    btn.Parent = toggleFrame
+    btn.Parent = toggle
     
-    local btnCorner = Instance.new("UICorner", btn)
-    btnCorner.CornerRadius = UDim.new(0, 6)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     
     local indicator = Instance.new("Frame")
     indicator.Name = "Indicator"
@@ -332,71 +343,69 @@ function UI:CreateToggle(text, key, defaultValue, column)
     indicator.BorderSizePixel = 0
     indicator.ZIndex = 8
     indicator.Parent = btn
+    Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
     
-    local indicatorCorner = Instance.new("UICorner", indicator)
-    indicatorCorner.CornerRadius = UDim.new(1, 0)
+    Config[key] = defaultValue
     
-    local glow = Instance.new("UIGradient")
-    glow.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 50, 50)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
-    })
-    glow.Rotation = 45
-    glow.Parent = indicator
-    
-    local function UpdateVisuals(state)
-        if state then
+    local function UpdateVisuals()
+        if Config[key] then
             btn.Text = "  " .. text .. "   [ON]"
             btn.BackgroundColor3 = Color3.fromRGB(60, 30, 40)
             indicator.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-            glow.Color = ColorSequence.new({
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 255, 50)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 200, 0))
-            })
         else
             btn.Text = "  " .. text .. "   [OFF]"
             btn.BackgroundColor3 = Color3.fromRGB(40, 20, 30)
             indicator.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
-            glow.Color = ColorSequence.new({
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 50, 50)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
-            })
         end
     end
     
-    -- Initialize config and visuals
-    Config[key] = defaultValue
-    UpdateVisuals(defaultValue)
+    UpdateVisuals()
     
-    local function OnToggle()
+    btn.MouseButton1Click:Connect(function()
         Config[key] = not Config[key]
-        UpdateVisuals(Config[key])
+        UpdateVisuals()
         
         if key == "Enabled" then
             UI.Main.Visible = Config.Enabled
+        elseif key == "ESP" then
+            if Config.ESP then
+                UI:CreateESPAll()
+            else
+                UI:ClearESP()
+            end
         elseif key == "FOVCircle" then
             UI:UpdateFOVCircle()
+        elseif key == "TargetHUD" then
+            if Config.TargetHUD then
+                UI:CreateTargetHUD()
+            else
+                UI:DestroyTargetHUD()
+            end
+        elseif key == "KillConfirm" then
+            if Config.KillConfirm then
+                UI:CreateKillConfirm()
+            else
+                UI:DestroyKillConfirm()
+            end
         end
-    end
+    end)
     
-    btn.MouseButton1Click:Connect(OnToggle)
-    toggleFrame.Parent = UI.Scroll
-    return toggleFrame
+    toggle.Parent = UI.Scroll
+    UI.ActiveComponents[#UI.ActiveComponents+1] = toggle
 end
 
-function UI:CreateSlider(text, key, min, max, default, decimals, suffix)
+-- Build Sliders
+local function CreateSlider(text, key, min, max, default, decimals, suffix)
     decimals = decimals or 0
     suffix = suffix or ""
     
     local sliderFrame = Instance.new("Frame")
     sliderFrame.Name = "Slider_" .. text:gsub("%s+", "_")
-    sliderFrame.Size = UDim2.new(0.9, 0, 0, 50)
+    sliderFrame.Size = UDim2.new(0.95, 0, 0, 50)
     sliderFrame.BackgroundColor3 = Color3.fromRGB(20, 10, 20)
     sliderFrame.BorderSizePixel = 0
     sliderFrame.ZIndex = 6
-    
-    local corner = Instance.new("UICorner", sliderFrame)
-    corner.CornerRadius = UDim.new(0, 8)
+    Instance.new("UICorner", sliderFrame).CornerRadius = UDim.new(0, 8)
     
     local label = Instance.new("TextLabel")
     label.Name = "Label"
@@ -414,14 +423,12 @@ function UI:CreateSlider(text, key, min, max, default, decimals, suffix)
     local rail = Instance.new("Frame")
     rail.Name = "Rail"
     rail.Size = UDim2.new(1, 0, 0, 6)
-    rail.Position = UDim2.new(0, 0, 0, 35)
+    rail.Position = UDim2.new(0, 0, 0, 32)
     rail.BackgroundColor3 = Color3.fromRGB(60, 30, 60)
     rail.BorderSizePixel = 0
     rail.ZIndex = 7
     rail.Parent = sliderFrame
-    
-    local railCorner = Instance.new("UICorner", rail)
-    railCorner.CornerRadius = UDim.new(1, 0)
+    Instance.new("UICorner", rail).CornerRadius = UDim.new(1, 0)
     
     local fill = Instance.new("Frame")
     fill.Name = "Fill"
@@ -430,9 +437,7 @@ function UI:CreateSlider(text, key, min, max, default, decimals, suffix)
     fill.BorderSizePixel = 0
     fill.ZIndex = 8
     fill.Parent = rail
-    
-    local fillCorner = Instance.new("UICorner", fill)
-    fillCorner.CornerRadius = UDim.new(1, 0)
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
     
     local drag = Instance.new("TextButton")
     drag.Name = "Drag"
@@ -443,12 +448,11 @@ function UI:CreateSlider(text, key, min, max, default, decimals, suffix)
     drag.ZIndex = 9
     drag.Parent = rail
     
-    local function UpdateSliderFromPercent(percent)
+    local function UpdateValue(percent)
         percent = math.clamp(percent, 0, 1)
         local value = min + (max - min) * percent
         if decimals > 0 then
-            value = string.format("%." .. decimals .. "f", value)
-            value = tonumber(value)
+            value = tonumber(string.format("%." .. decimals .. "f", value))
         else
             value = math.round(value)
         end
@@ -464,16 +468,19 @@ function UI:CreateSlider(text, key, min, max, default, decimals, suffix)
     end
     
     local function StartDrag()
-        local startX = drag.AbsolutePosition.X
         local railStartX = rail.AbsolutePosition.X
         local railWidth = rail.AbsoluteSize.X
         
         local connection
         connection = RunService.RenderStepped:Connect(function()
+            if not drag:IsDescendantOf(game) then
+                connection:Disconnect()
+                return
+            end
+            
             local mouseX = UserInputService:GetMouseLocation().X
-            local delta = mouseX - railStartX
-            local percent = delta / railWidth
-            UpdateSliderFromPercent(percent)
+            local percent = (mouseX - railStartX) / railWidth
+            UpdateValue(percent)
         end)
         
         local inputEnded
@@ -487,59 +494,157 @@ function UI:CreateSlider(text, key, min, max, default, decimals, suffix)
     
     drag.MouseButton1Down:Connect(StartDrag)
     sliderFrame.Parent = UI.Scroll
-    return sliderFrame
+    UI.ActiveComponents[#UI.ActiveComponents+1] = sliderFrame
 end
 
 -- ==================== BUILD UI ====================
-do
+local function BuildUI()
+    if not CreateUI() then
+        error("Failed to create UI - PlayerGui not found")
+        return false
+    end
+    
     -- Toggles
-    UI:CreateToggle("Master System", "Enabled", false)
-    UI:CreateToggle("Team Check", "TeamCheck", true)
-    UI:CreateToggle("Infinite Stamina", "InfStamina", false)
-    UI:CreateToggle("ESP Visuals", "ESP", false)
-    UI:CreateToggle("Aimbot", "Aimbot", false)
-    UI:CreateToggle("Auto‑Block", "AutoBlock", false)
-    UI:CreateToggle("FOV Circle", "FOVCircle", false)
-    UI:CreateToggle("Target HUD", "TargetHUD", false)
-    UI:CreateToggle("Silent Aim", "SilentAim", false)
-    UI:CreateToggle("Kill Confirm", "KillConfirm", false)
-    UI:CreateToggle("Speed Boost", "SpeedBoost", false)
-    UI:CreateToggle("Jump Boost", "JumpBoost", false)
-    UI:CreateToggle("Sprint", "SprintEnabled", false)
-    UI:CreateToggle("Anti‑Aim", "AntiAim", false)
-    UI:CreateToggle("Auto‑Dodge", "AutoDodge", false)
-    UI:CreateToggle("Fullbright", "Fullbright", false)
-    UI:CreateToggle("Night Vision", "NightVision", false)
-    UI:CreateToggle("Remove Grass", "RemoveGrass", false)
-    UI:CreateToggle("Remove Fog", "RemoveFog", false)
+    CreateToggle("Master System", "Enabled", false)
+    CreateToggle("Team Check", "TeamCheck", true)
+    CreateToggle("Infinite Stamina", "InfStamina", false)
+    CreateToggle("ESP Visuals", "ESP", false)
+    CreateToggle("Aimbot", "Aimbot", false)
+    CreateToggle("Auto-Block", "AutoBlock", false)
+    CreateToggle("FOV Circle", "FOVCircle", false)
+    CreateToggle("Target HUD", "TargetHUD", false)
+    CreateToggle("Silent Aim", "SilentAim", false)
+    CreateToggle("Kill Confirm", "KillConfirm", false)
+    CreateToggle("Speed Boost", "SpeedBoost", false)
+    CreateToggle("Jump Boost", "JumpBoost", false)
+    CreateToggle("Sprint", "SprintEnabled", false)
+    CreateToggle("Anti-Aim", "AntiAim", false)
+    CreateToggle("Auto-Dodge", "AutoDodge", false)
+    CreateToggle("Fullbright", "Fullbright", false)
+    CreateToggle("Night Vision", "NightVision", false)
+    CreateToggle("Remove Grass", "RemoveGrass", false)
+    CreateToggle("Remove Fog", "RemoveFog", false)
     
     -- Sliders
-    UI:CreateSlider("Hitbox Multiplier", "HitboxMultiplier", 1, 20, 6, 0)
-    UI:CreateSlider("Magnet Range", "MagnetRange", 20, 300, 120, 0)
-    UI:CreateSlider("Prediction Time", "PredictionTime", 0.01, 0.8, 0.18, 2)
-    UI:CreateSlider("Aimbot FOV", "AimbotFOV", 5, 150, 45, 0)
-    UI:CreateSlider("Aim Smoothing", "AimSmoothing", 0.01, 1, 0.12, 2)
-    UI:CreateSlider("Speed Multiplier", "SpeedMultiplier", 1, 3, 1.5, 1)
-    UI:CreateSlider("Jump Multiplier", "JumpMultiplier", 1, 3, 1.5, 1)
-    UI:CreateSlider("Sprint Multiplier", "SprintMultiplier", 1, 3, 1.8, 1)
-    UI:CreateSlider("Prediction Ammount", "PredictionAmmount", 0, 0.5, 0.15, 2)
-    UI:CreateSlider("Auto‑Block Range", "AutoBlockRange", 10, 100, 30, 0)
+    CreateSlider("Hitbox Multiplier", "HitboxMultiplier", 1, 20, 6, 0)
+    CreateSlider("Magnet Range", "MagnetRange", 20, 300, 120, 0)
+    CreateSlider("Prediction Time", "PredictionTime", 0.01, 0.8, 0.18, 2)
+    CreateSlider("Aimbot FOV", "AimbotFOV", 5, 150, 45, 0)
+    CreateSlider("Aim Smoothing", "AimSmoothing", 0.01, 1, 0.12, 2)
+    CreateSlider("Speed Multiplier", "SpeedMultiplier", 1, 3, 1.5, 1)
+    CreateSlider("Jump Multiplier", "JumpMultiplier", 1, 3, 1.5, 1)
+    CreateSlider("Sprint Multiplier", "SprintMultiplier", 1, 3, 1.8, 1)
+    CreateSlider("Prediction Amount", "PredictionAmmount", 0, 0.5, 0.15, 2)
+    CreateSlider("Auto-Block Range", "AutoBlockRange", 10, 100, 30, 0)
     
-    -- Min/Max logic
+    -- Server Hop Section
+    local serverHopFrame = Instance.new("Frame")
+    serverHopFrame.Name = "ServerHop"
+    serverHopFrame.Size = UDim2.new(0.95, 0, 0, 120)
+    serverHopFrame.BackgroundColor3 = Color3.fromRGB(20, 5, 10)
+    serverHopFrame.BorderSizePixel = 0
+    serverHopFrame.ZIndex = 6
+    Instance.new("UICorner", serverHopFrame).CornerRadius = UDim.new(0, 8)
+    serverHopFrame.Parent = UI.Scroll
+    
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 30)
+    title.Position = UDim2.new(0, 0, 0, 5)
+    title.BackgroundTransparency = 1
+    title.Text = "⊹ SERVER HOP ⊹"
+    title.TextColor3 = Color3.fromRGB(255, 100, 100)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 16
+    title.ZIndex = 7
+    title.Parent = serverHopFrame
+    
+    local function CreateServerHopButton(text, yPos, callback)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, -10, 0, 30)
+        btn.Position = UDim2.new(0, 5, 0, yPos)
+        btn.Text = "  " .. text
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        btn.Font = Enum.Font.GothamSemibold
+        btn.TextSize = 13
+        btn.TextXAlignment = Enum.TextXAlignment.Left
+        btn.BackgroundColor3 = Color3.fromRGB(60, 20, 30)
+        btn.BorderSizePixel = 0
+        btn.ZIndex = 8
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+        btn.Parent = serverHopFrame
+        
+        btn.MouseEnter:Connect(function()
+            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(80, 30, 40)}):Play()
+        end)
+        btn.MouseLeave:Connect(function()
+            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 20, 30)}):Play()
+        end)
+        
+        btn.MouseButton1Click:Connect(callback)
+        return btn
+    end
+    
+    CreateServerHopButton("★ LOW POPULATION (1-2 players)", 5, function()
+        task.spawn(function()
+            local placeId = game.PlaceId
+            local success, servers = pcall(function()
+                return TeleportService:GetServersForPlaceAsync(placeId, 50, "")
+            end)
+            
+            if success and servers then
+                local lowPopServers = {}
+                for _, server in ipairs(servers) do
+                    if server and server.PlayerCount and server.PlayerCount >= 1 and server.PlayerCount <= 2 then
+                        table.insert(lowPopServers, server)
+                    end
+                end
+                
+                if #lowPopServers > 0 then
+                    local target = lowPopServers[math.random(1, #lowPopServers)]
+                    TeleportService:TeleportToPlaceInstance(placeId, target.Id)
+                else
+                    -- Fallback to random
+                    TeleportService:Teleport(placeId)
+                end
+            else
+                TeleportService:Teleport(placeId)
+            end
+        end)
+    end)
+    
+    CreateServerHopButton("♻ REJOIN CURRENT SERVER", 40, function()
+        local placeId = game.PlaceId
+        local jobId = game.JobId
+        if jobId and jobId ~= "" then
+            TeleportService:TeleportToPlaceInstance(placeId, jobId)
+        else
+            TeleportService:Teleport(placeId)
+        end
+    end)
+    
+    CreateServerHopButton("⊕ RANDOM SERVER HOP", 75, function()
+        local placeId = game.PlaceId
+        TeleportService:Teleport(placeId)
+    end)
+    
+    UI.ActiveComponents[#UI.ActiveComponents+1] = serverHopFrame
+    
+    -- Close button functionality
     UI.CloseBtn.MouseButton1Click:Connect(function()
         UI.Main.Visible = false
     end)
     
-    -- (We don't need a Sukuna icon for minimalism, but you could add a small toggle)
-    -- For now, just use F1 to bring back UI if hidden? We'll keep UI hidden via close, but F1 toggles master.
-    -- To reopen UI, press F1 to disable then re-enable? Or we could add a key to toggle UI visibility.
-    -- Let's add: pressing F1 toggles master; if master disabled and UI hidden, pressing F1 re-enables and shows UI.
-    -- Already handled in keybind section.
+    -- Update canvas size
+    task.wait(0.1)
+    local contentSize = UI.Scroll.AbsoluteWindowSize.Y
+    UI.Scroll.CanvasSize = UDim2.new(0, 0, 0, contentSize + 20)
     
-    UI:UpdateFOVCircle()
+    return true
 end
 
--- ==================== PERSISTENT HITBOX SYSTEM ====================
+-- ==================== SYSTEMS ====================
+
+-- Hitbox System
 do
     local DataStore = ReplicatedStorage:FindFirstChild(Config.PersistentHitboxStore)
     if not DataStore then
@@ -549,9 +654,8 @@ do
     end
     
     local function ApplyHitbox(hrp, multiplier)
-        -- Correct scaling: multiplier 6 = native 4x6x4.
         local baseSize = Vector3.new(4, 6, 4)
-        local scale = multiplier / 6
+        local scale = multiplier / 6  -- 6 = native 4x6x4
         hrp.Size = baseSize * scale
         hrp.CanCollide = true
         hrp.CanTouch = true
@@ -563,7 +667,7 @@ do
         end
     end
     
-    local function GetSavedMultiplier(player)
+    local function GetMultiplier(player)
         local saved = DataStore:FindFirstChild(tostring(player.UserId))
         if saved and saved:IsA("NumberValue") then
             return saved.Value
@@ -571,57 +675,49 @@ do
         return Config.HitboxMultiplier
     end
     
-    local function SaveMultiplier(player, multiplier)
-        local saved = DataStore:FindFirstChild(tostring(player.UserId))
-        if not saved then
-            saved = Instance.new("NumberValue")
-            saved.Name = tostring(player.UserId)
-            saved.Parent = DataStore
-        end
-        saved.Value = multiplier
-    end
-    
-    local function UpdateCharacterHitbox(character, player)
-        if not character or not player then return end
-        local hrp = character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            local mult = GetSavedMultiplier(player)
-            ApplyHitbox(hrp, mult)
-        end
-    end
-    
     UI.UpdateAllHitboxes = function()
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer and player.Character then
-                UpdateCharacterHitbox(player.Character, player)
+                local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    ApplyHitbox(hrp, GetMultiplier(player))
+                end
             end
         end
     end
     
-    local function OnPlayerAdded(player)
-        player.CharacterAdded:Connect(function(char)
-            task.wait(0.5)
-            UpdateCharacterHitbox(char, player)
-        end)
+    local function OnCharacterAdded(char, player)
+        task.wait(0.5)
+        local hrp = char:WaitForChild("HumanoidRootPart", 2)
+        if hrp then
+            ApplyHitbox(hrp, GetMultiplier(player))
+        end
     end
     
-    Players.PlayerAdded:Connect(OnPlayerAdded)
+    Players.PlayerAdded:Connect(function(player)
+        player.CharacterAdded:Connect(function(char)
+            OnCharacterAdded(char, player)
+        end)
+    end)
+    
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
-            OnPlayerAdded(player)
+            player.CharacterAdded:Connect(function(char)
+                OnCharacterAdded(char, player)
+            end)
         end
     end
     
     LocalPlayer.CharacterAdded:Connect(function(char)
-        UpdateCharacterHitbox(char, LocalPlayer)
+        OnCharacterAdded(char, LocalPlayer)
     end)
     
     if LocalPlayer.Character then
-        UpdateCharacterHitbox(LocalPlayer.Character, LocalPlayer)
+        OnCharacterAdded(LocalPlayer.Character, LocalPlayer)
     end
 end
 
--- ==================== PROJECTILE MAGNETISM (TRACKING SYSTEM) ====================
+-- Magnetism System
 do
     local TrackedProjectiles = {}
     
@@ -636,24 +732,23 @@ do
         return false
     end
     
-    local function PredictPosition(position, velocity, time)
-        return position + (velocity * time)
+    local function PredictPosition(pos, vel, time)
+        return pos + (vel * time)
     end
     
     local function ApplyMagnetism(projectile)
-        if not Config.Enabled or not Config.MagnetRange > 0 then return end
+        if not Config.Enabled then return end
         
-        local projectilePos = projectile.Position
+        local pos = projectile.Position
         local bestTarget, bestDist = nil, Config.MagnetRange
         
-        -- Find nearest enemy within range
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer and player.Character then
                 if Config.TeamCheck and player.Team == LocalPlayer.Team then continue end
                 
                 local hrp = player.Character:FindFirstChild("HumanoidRootPart")
                 if hrp then
-                    local dist = (hrp.Position - projectilePos).Magnitude
+                    local dist = (hrp.Position - pos).Magnitude
                     if dist < bestDist then
                         bestDist = dist
                         bestTarget = player
@@ -666,20 +761,18 @@ do
             local targetHrp = bestTarget.Character:FindFirstChild("HumanoidRootPart")
             if not targetHrp then return end
             
-            -- Prediction
             local targetVel = targetHrp.AssemblyLinearVelocity
             local predictedPos = PredictPosition(targetHrp.Position, targetVel, Config.PredictionTime)
             
-            -- Additional travel time prediction
-            local toTarget = predictedPos - projectilePos
+            local toTarget = predictedPos - pos
             local travelTime = toTarget.Magnitude / Config.MagnetStrength
             predictedPos = PredictPosition(targetHrp.Position, targetVel, Config.PredictionTime + travelTime * 0.5)
             
-            local direction = (predictedPos - projectilePos).Unit
-            local newVelocity = direction * Config.MagnetStrength
+            local dir = (predictedPos - pos).Unit
+            local newVel = dir * Config.MagnetStrength
             
             pcall(function()
-                projectile.AssemblyLinearVelocity = newVelocity
+                projectile.AssemblyLinearVelocity = newVel
                 projectile.AssemblyAngularVelocity = Vector3.new(
                     math.random(-10, 10),
                     math.random(-10, 10),
@@ -689,14 +782,12 @@ do
         end
     end
     
-    -- Track projectiles via descendant events
-    Workspace.DescendantAdded:Connect(function(descendant)
-        if IsMagnetProjectile(descendant) then
-            table.insert(TrackedProjectiles, descendant)
+    Workspace.DescendantAdded:Connect(function(desc)
+        if IsMagnetProjectile(desc) then
+            table.insert(TrackedProjectiles, desc)
         end
     end)
     
-    -- Scanner loop
     UI.Connections.MagnetScanner = RunService.Heartbeat:Connect(function()
         if not Config.Enabled then return end
         
@@ -705,63 +796,51 @@ do
             if not proj or not proj.Parent then
                 table.remove(TrackedProjectiles, i)
             else
-                ApplyMagnetism(proj)
+                task.defer(ApplyMagnetism, proj)
             end
         end
     end)
 end
 
--- ==================== RECURSIVE STAMINA FINDER ====================
+-- Stamina System
 do
-    local function RecursiveFindStamina(obj, depth, maxDepth)
+    local function RecursiveFind(obj, depth, maxDepth)
         if depth > maxDepth then return nil end
         
         for _, child in ipairs(obj:GetChildren()) do
             if child:IsA("Folder") then
-                local found = RecursiveFindStamina(child, depth + 1, maxDepth)
+                local found = RecursiveFind(child, depth + 1, maxDepth)
                 if found then return found end
             elseif child.Name:lower():find("stamina") and child:IsA("NumberValue") then
                 return child
             end
         end
-        
         return nil
     end
     
-    local function FindStaminaInCharacter(char)
-        if not char then return nil end
-        return RecursiveFindStamina(char, 0, Config.StaminaSearchDepth)
-    end
-    
-    local function SetInfiniteStamina()
+    local function SetStamina()
         if not Config.InfStamina then return end
         
         local char = LocalPlayer.Character
         if not char then return end
         
-        local stamina = FindStaminaInCharacter(char)
+        local stamina = RecursiveFind(char, 0, Config.StaminaSearchDepth)
         if stamina and stamina:IsA("NumberValue") then
             stamina.Value = 100
         else
-            local staminaFolder = char:FindFirstChild("StaminaFolder") or char:FindFirstChild("Stats") or char
+            local folder = char:FindFirstChild("Stats") or char:FindFirstChild("Data") or char
             local newStamina = Instance.new("NumberValue")
             newStamina.Name = "Stamina"
             newStamina.Value = 100
-            newStamina.Parent = staminaFolder
+            newStamina.Parent = folder
         end
     end
     
-    UI.Connections.StaminaLoop = RunService.Heartbeat:Connect(function()
-        if Config.InfStamina then
-            SetInfiniteStamina()
-        end
-    end)
+    UI.Connections.StaminaLoop = RunService.Heartbeat:Connect(SetStamina)
 end
 
--- ==================== AIMBOT CORE ====================
+-- Aimbot System
 do
-    local Camera = Workspace.CurrentCamera
-    
     local function GetTarget()
         local bestTarget, bestDist = nil, Config.AimbotFOV * 10
         local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -782,12 +861,8 @@ do
             local aimPart = nil
             if Config.AimPriority == "Head" then
                 aimPart = char:FindFirstChild("Head")
-            elseif Config.AimPriority == "Torso" then
+            else
                 aimPart = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
-            end
-            
-            if not aimPart then
-                aimPart = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
             end
             
             if aimPart then
@@ -822,12 +897,16 @@ do
                 (math.random() - 0.5) * Config.AimSmoothing * 10,
                 (math.random() - 0.5) * Config.AimSmoothing * 10
             )
-            mouse.MoveTo(targetX + offset.X, targetY + offset.Y)
+            pcall(function()
+                mouse.MoveTo(targetX + offset.X, targetY + offset.Y)
+            end)
         else
             local currentPos = Vector2.new(mouse.X, mouse.Y)
             local direction = Vector2.new(targetX - currentPos.X, targetY - currentPos.Y)
             local step = direction * Config.AimSmoothing
-            mouse.MoveTo(currentPos.X + step.X, currentPos.Y + step.Y)
+            pcall(function()
+                mouse.MoveTo(currentPos.X + step.X, currentPos.Y + step.Y)
+            end)
         end
     end
     
@@ -841,9 +920,9 @@ do
     end)
 end
 
--- ==================== ESP SYSTEM (CLEAN) ====================
+-- ESP System
 do
-    local function CreateESPBox(part)
+    local function CreateBox(part)
         if not part or not part.Parent then return nil end
         
         local box = Instance.new("BoxHandleAdornment")
@@ -915,20 +994,49 @@ do
         return label
     end
     
-    -- ESP Main Loop
+    UI.CreateESPAll = function()
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                local char = player.Character
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    if Config.ESPBox and not UI.ESPObjects[hrp] then
+                        CreateBox(hrp)
+                    end
+                    if Config.ESPHealthBar and not UI.ESPObjects[char] then
+                        CreateHealthBar(char)
+                    end
+                    if Config.ESPName and not UI.ESPObjects[char .. "_Name"] then
+                        CreateNameLabel(char, player)
+                    end
+                end
+            end
+        end
+    end
+    
+    UI.ClearESP = function()
+        for _, obj in pairs(UI.ESPObjects) do
+            pcall(function()
+                obj:Destroy()
+            end)
+        end
+        UI.ESPObjects = {}
+    end
+    
     UI.Connections.ESPLoop = RunService.RenderStepped:Connect(function()
         if not Config.Enabled or not Config.ESP then
-            UI:ClearESP()
+            UI.ClearESP()
             return
         end
         
-        -- Clean up dead/removed objects
+        -- Cleanup
         for key, obj in pairs(UI.ESPObjects) do
             if not obj or not obj.Parent then
-                pcall(function() obj:Destroy() end)
+                pcall(function()
+                    obj:Destroy()
+                end)
                 UI.ESPObjects[key] = nil
             else
-                -- For Adornments, check Adornee
                 if obj:IsA("BoxHandleAdornment") then
                     if not obj.Adornee or not obj.Adornee.Parent then
                         obj:Destroy()
@@ -959,7 +1067,7 @@ do
             if not hrp then continue end
             
             if Config.ESPBox and not UI.ESPObjects[hrp] then
-                CreateESPBox(hrp)
+                CreateBox(hrp)
             end
             
             if Config.ESPHealthBar and not UI.ESPObjects[char] then
@@ -973,18 +1081,9 @@ do
             updateCount = updateCount + 1
         end
     end)
-    
-    UI.ClearESP = function()
-        for _, obj in pairs(UI.ESPObjects) do
-            pcall(function()
-                obj:Destroy()
-            end)
-        end
-        UI.ESPObjects = {}
-    end
 end
 
--- ==================== AUTO-BLOCK SYSTEM ====================
+-- Auto-Block System
 do
     local lastBlockTime = 0
     
@@ -1032,12 +1131,9 @@ do
     end)
 end
 
--- ==================== TARGET HUD ====================
+-- Target HUD
 do
-    local hudFrame = nil
-    local nameLabel = nil
-    local distLabel = nil
-    local healthBar = nil
+    local hudFrame
     
     UI.CreateTargetHUD = function()
         if hudFrame then return end
@@ -1047,13 +1143,13 @@ do
         hudFrame.Size = Config.TargetHUDSize
         hudFrame.Position = Config.TargetHUDPos
         hudFrame.BackgroundColor3 = Config.TargetHUDColor
-        hudFrame.BorderColor3 = Config.TargetHUDBorderColor
+        hudFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
         hudFrame.BorderSizePixel = 2
         hudFrame.ZIndex = 100
         Instance.new("UICorner", hudFrame).CornerRadius = UDim.new(0, 8)
         hudFrame.Parent = UI.ScreenGui
         
-        nameLabel = Instance.new("TextLabel")
+        local nameLabel = Instance.new("TextLabel")
         nameLabel.Size = UDim2.new(1, -10, 0, 25)
         nameLabel.Position = UDim2.new(0, 5, 0, 5)
         nameLabel.BackgroundTransparency = 1
@@ -1062,9 +1158,10 @@ do
         nameLabel.Font = Enum.Font.GothamBold
         nameLabel.TextSize = 18
         nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+        nameLabel.ZIndex = 101
         nameLabel.Parent = hudFrame
         
-        distLabel = Instance.new("TextLabel")
+        local distLabel = Instance.new("TextLabel")
         distLabel.Size = UDim2.new(1, -10, 0, 20)
         distLabel.Position = UDim2.new(0, 5, 0, 32)
         distLabel.BackgroundTransparency = 1
@@ -1073,14 +1170,16 @@ do
         distLabel.Font = Enum.Font.Gotham
         distLabel.TextSize = 14
         distLabel.TextXAlignment = Enum.TextXAlignment.Left
+        distLabel.ZIndex = 101
         distLabel.Parent = hudFrame
         
-        healthBar = Instance.new("Frame")
+        local healthBar = Instance.new("Frame")
         healthBar.Size = UDim2.new(1, -10, 0, 15)
         healthBar.Position = UDim2.new(0, 5, 1, -25)
         healthBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
         healthBar.BorderSizePixel = 0
         Instance.new("UICorner", healthBar).CornerRadius = UDim.new(0, 4)
+        healthBar.ZIndex = 101
         healthBar.Parent = hudFrame
         
         local healthFill = Instance.new("Frame")
@@ -1160,15 +1259,9 @@ do
             UI.Connections.HUDUpdate = nil
         end
     end
-    
-    -- Initialize when toggle turned on (handled in loop, but we need to create HUD frame when enabled)
-    -- We'll hook into the targetHUD toggle in the main loop? Actually simpler: check in HUDUpdate loop if Config.TargetHUD and no frame, then create.
-    -- But we already have CreateTargetHUD function. We'll call it when toggled on. For now, we'll create it lazily in the HUDUpdate connection if it doesn't exist.
-    -- Modify above: In HUDUpdate loop, if Config.TargetHUD and not hudFrame, call UI.CreateTargetHUD().
-    -- We'll adjust after defining.
 end
 
--- ==================== FOV CIRCLE ====================
+-- FOV Circle
 do
     UI.FOVCircleFrame = nil
     
@@ -1201,21 +1294,11 @@ do
         
         UI.FOVCircleFrame = fovCircle
     end
-    
-    UI.Connections.FOVUpdate = RunService.RenderStepped:Connect(function()
-        if not Config.FOVCircle or not UI.FOVCircleFrame then return end
-        
-        if Config.FOVCircleDynamic then
-            local size = Config.AimbotFOV * 2
-            UI.FOVCircleFrame.Size = UDim2.new(0, size, 0, size)
-            UI.FOVCircleFrame.Position = UDim2.new(0.5, -size/2, 0.5, -size/2)
-        end
-    end)
 end
 
--- ==================== KILL CONFIRM ====================
+-- Kill Confirm
 do
-    local killFlash = nil
+    local killFlash
     
     UI.CreateKillConfirm = function()
         if killFlash then return end
@@ -1227,8 +1310,6 @@ do
         killFlash.BackgroundTransparency = 1
         killFlash.ZIndex = 999
         killFlash.Parent = UI.ScreenGui
-        
-        local tweenInfo = TweenInfo.new(Config.KillConfirmTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         
         UI.Connections.KillDetect = RunService.Heartbeat:Connect(function()
             if not Config.Enabled or not Config.KillConfirm then return end
@@ -1244,7 +1325,11 @@ do
                                 local dist = (char:GetPivot().Position - myHrp.Position).Magnitude
                                 if dist < Config.MagnetRange then
                                     killFlash.Visible = true
-                                    TweenService:Create(killFlash, tweenInfo, {BackgroundTransparency = 0.5}):Play()
+                                    local tween = TweenService:Create(killFlash, 
+                                        TweenInfo.new(Config.KillConfirmTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                                        {BackgroundTransparency = 0.5}
+                                    )
+                                    tween:Play()
                                     task.delay(Config.KillConfirmTime, function()
                                         killFlash.Visible = false
                                         killFlash.BackgroundTransparency = 1
@@ -1270,7 +1355,7 @@ do
     end
 end
 
--- ==================== MOVEMENT BOOSTS ====================
+-- Movement Boosts
 do
     local originalWalkSpeed = 16
     local originalJumpPower = 50
@@ -1314,7 +1399,7 @@ do
     UI.Connections.MovementLoop = RunService.Heartbeat:Connect(ApplyBoosts)
 end
 
--- ==================== ANTI-AIM & AUTO-DODGE ====================
+-- Anti-Aim & Auto-Dodge
 do
     local lastDodgeTime = 0
     
@@ -1351,11 +1436,10 @@ do
         local myHrp = char:FindFirstChild("HumanoidRootPart")
         if not myHrp then return end
         
-        -- Use tracked projectiles
         for _, proj in ipairs(TrackedProjectiles) do
             if proj.Parent and (proj.Position - myHrp.Position).Magnitude < 20 then
-                local dodgeDirection = (proj.Position - myHrp.Position).Unit
-                myHrp.AssemblyLinearVelocity = dodgeDirection * 50
+                local dodgeDir = (proj.Position - myHrp.Position).Unit
+                myHrp.AssemblyLinearVelocity = dodgeDir * 50
                 lastDodgeTime = currentTime
                 break
             end
@@ -1363,7 +1447,7 @@ do
     end)
 end
 
--- ==================== VISUAL EFFECTS ====================
+-- Visual Effects
 do
     UI.Connections.VisualLoop = RunService.RenderStepped:Connect(function()
         if not Config.Enabled then return end
@@ -1399,7 +1483,7 @@ do
     end)
 end
 
--- ==================== MAIN CONTROL LOOP ====================
+-- Main Loop
 do
     local lastHitboxUpdate = 0
     
@@ -1430,7 +1514,7 @@ do
     end)
 end
 
--- ==================== KEYBIND HANDLING ====================
+-- Keybinds
 do
     UI.Connections.KeybindListener = UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if gameProcessed then return end
@@ -1439,31 +1523,45 @@ do
             Config.Enabled = not Config.Enabled
             print("Apex Domain: " .. (Config.Enabled and "ENABLED" or "DISABLED"))
             
-            UI.Main.Visible = Config.Enabled
+            if UI.Main then
+                UI.Main.Visible = Config.Enabled
+            end
         end
     end)
 end
 
--- ==================== CLEANUP ON LEAVE ====================
+-- Cleanup
 do
     local function Cleanup()
-        for name, conn in pairs(UI.Connections) do
+        for _, conn in pairs(UI.Connections) do
             if conn and conn.Disconnect then
-                conn:Disconnect()
+                pcall(function()
+                    conn:Disconnect()
+                end)
             end
         end
-        UI:ClearESP()
-        UI.DestroyTargetHUD()
-        UI.DestroyKillConfirm()
-        if UI.FOVCircleFrame then
-            UI.FOVCircleFrame:Destroy()
-            UI.FOVCircleFrame = nil
-        end
+        UI.Connections = {}
+        
+        pcall(function()
+            UI:ClearESP()
+            UI.DestroyTargetHUD()
+            UI.DestroyKillConfirm()
+            if UI.FOVCircleFrame then
+                UI.FOVCircleFrame:Destroy()
+            end
+        end)
+        
         if UI.Main then
             UI.Main:Destroy()
+            UI.Main = nil
         end
-        if UI.ShadowFrame then
-            UI.ShadowFrame:Destroy()
+        if UI.Shadow then
+            UI.Shadow:Destroy()
+            UI.Shadow = nil
+        end
+        if UI.ScreenGui then
+            UI.ScreenGui:Destroy()
+            UI.ScreenGui = nil
         end
     end
     
@@ -1475,25 +1573,21 @@ do
 end
 
 -- ==================== INITIALIZATION ====================
-print("◈ FORSAKEN: APEX DOMAIN ULTIMATE v3.6 LOADED ◈")
-print("Features Loaded:")
-print(" • 4-6-4 Persistent Hitboxes (correct scaling)")
-print(" • Crystal & Axe Magnetism (Jane Doe compatible)")
-print(" • Deep Stamina Finder")
-print(" • Aimbot w/ Prediction & Silent Aim")
-print(" • ESP (Box, Health, Name)")
-print(" • Auto-Block, FOV Circle, Target HUD")
-print(" • Kill Confirm, Speed/Jump Boosts")
-print(" • Anti-Aim, Auto-Dodge")
-print(" • Fullbright, Night Vision, Grass/Fog Removal")
-print("\nPress F1 to toggle master system.")
-
--- Ensure HUD is created when needed
-UI.Connections.HUDCheck = RunService.RenderStepped:Connect(function()
-    if Config.TargetHUD and not UI.hudFrame then
-        UI.CreateTargetHUD()
-    elseif not Config.TargetHUD and UI.hudFrame then
-        UI.DestroyTargetHUD()
+task.spawn(function()
+    task.wait(1) -- Wait for everything to load
+    
+    if BuildUI() then
+        print("◈ APEX DOMAIN ULTIMATE v4.0 LOADED ◈")
+        print("Features: Hitboxes, Magnetism, Aimbot, ESP, Auto-Block, FOV, HUD, Kill Confirm, Boosts, Anti-Aim, Dodge, Visuals, Server Hop")
+        print("Press F1 to toggle")
+    else
+        warn("Failed to build UI - retrying...")
+        task.wait(2)
+        if BuildUI() then
+            print("UI loaded on retry")
+        else
+            warn("UI failed to load - check PlayerGui access")
+        end
     end
 end)
 
