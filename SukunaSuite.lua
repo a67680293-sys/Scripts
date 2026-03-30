@@ -1,5 +1,4 @@
 
-```lua
 --[[
     FORSAKEN: APEX DOMAIN - ULTIMATE CHEAT SUITE
     Version: 3.5 (Full 2026 Bypass / Delta Executor Optimized)
@@ -1677,4 +1676,3 @@ if Config.UI3DEffect then
 end
 
 return UI
-```
