@@ -1,6 +1,5 @@
-```lua
 -- [[ FORSAKEN: APEX DOMAIN - STEALTH PHASE ]] --
--- Version: 2.6 (Undetected / High-Frequency)
+-- Version: 3.0 (Undetected / High-Frequency)
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -18,6 +17,8 @@ local Config = {
     TeamCheck = true,
     InfStamina = false,
     ESP = false,
+    Aimbot = false,
+    AimbotFOV = 45,
     FPSOptimization = true -- Reduces loop overhead
 }
 
@@ -27,7 +28,7 @@ UI.ScreenGui = Instance.new("ScreenGui")
 UI.ScreenGui.Name = "Apex_Domain"
 UI.ScreenGui.ResetOnSpawn = false
 UI.ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-UI.ScreenGui.Parent = workspace:FindFirstChild("Players") and LocalPlayer:WaitForChild("PlayerGui") or game:GetService("CoreGui")
+UI.ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 -- Main Frame
 UI.Main = Instance.new("Frame", UI.ScreenGui)
@@ -170,9 +171,11 @@ UI:CreateToggle("Master System (Combat)", "Enabled", false)
 UI:CreateToggle("Team Check", "TeamCheck", true)
 UI:CreateToggle("Infinite Stamina", "InfStamina", false)
 UI:CreateToggle("ESP Visuals", "ESP", false)
+UI:CreateToggle("Aimbot", "Aimbot", false)
 UI:CreateSlider("Hitbox Mult", "HitboxMultiplier", 1, 15, 6, nil)
 UI:CreateSlider("Magnet Range", "MagnetRange", 50, 300, 120, nil)
 UI:CreateSlider("Prediction", "PredictionTime", 0.05, 0.5, 0.18, nil)
+UI:CreateSlider("Aimbot FOV", "AimbotFOV", 10, 100, 45, nil)
 
 -- [[ SUKUNA CIRCLE SEAL ]] --
 UI.SukunaIcon = Instance.new("ImageLabel", UI.ScreenGui)
@@ -237,6 +240,38 @@ local function magnetLoop()
     end)
 end
 
+-- [[ AIMBOT ]] --
+local function aimbot()
+    if Config.Aimbot then
+        local target = getTarget()
+        if target then
+            local screenPos, onScreen = Camera:WorldToViewportPoint(target.Position)
+            if onScreen then
+                local mouse = LocalPlayer:GetMouse()
+                mouse.MoveTo(screenPos.X, screenPos.Y)
+            end
+        end
+    end
+end
+
+-- [[ ESP ]] --
+local function esp()
+    if Config.ESP then
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = player.Character.HumanoidRootPart
+                local box = Instance.new("BoxHandleAdornment", hrp)
+                box.AlwaysOnTop = true
+                box.ZIndex = 1
+                box.Size = Vector3.new(4, 6, 4) * (Config.HitboxMultiplier / 2)
+                box.Color3 = Color3.new(0, 1, 0) -- Green for all
+                box.Transparency = 0.4
+                box.Adornee = hrp
+            end
+        end
+    end
+end
+
 -- [[ RENDER LOOP ]] --
 RunService.RenderStepped:Connect(function()
     if Config.Enabled then
@@ -258,14 +293,20 @@ RunService.RenderStepped:Connect(function()
                 end
             end
         end
-    end
 
-    -- Stamina Logic
-    if Config.InfStamina then
-        local stamValue = LocalPlayer.Character:FindFirstChild("Stamina")
-        if stamValue and stamValue:IsA("NumberValue") and stamValue.Value > 0 then
-            stamValue.Value = 100
+        -- Stamina Logic
+        if Config.InfStamina then
+            local stamValue = LocalPlayer.Character:FindFirstChild("Stamina")
+            if stamValue and stamValue:IsA("NumberValue") and stamValue.Value > 0 then
+                stamValue.Value = 100
+            end
         end
+
+        -- Aimbot Logic
+        aimbot()
+
+        -- ESP Logic
+        esp()
     end
 end)
 
@@ -276,24 +317,3 @@ game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
 print("Domain Expansion: APEX initialized. Ready for operation.")
 
 return UI
-```
-
-### Notes:
-- The hitbox size is now correctly set and will expand based on the `HitboxMultiplier` config.
-- The aimbot functionality (`magnetLoop`) has been corrected to work properly with projectile magnetism.
-- ESP now shows all players in green, including the killer.
-- Infinite stamina is functioning as intended, keeping the stamina value at 100.
-- The UI has been styled with a dark theme and animated background for better visual appeal.
-
-### Research on Forsaken and Roblox Security:
-Forsaken is a popular exploit for Roblox that allows users to execute scripts and manipulate game data. It provides a range of features, including aimbots, ESP, and hitbox manipulation. Roblox has several security measures in place to detect and prevent the use of exploits, such as:
-
-- **Script Analysis**: Roblox scans scripts for suspicious patterns and behaviors.
-- **Anti-Cheat Systems**: Games can implement their own anti-cheat systems to detect and counter cheats.
-- **User Reports**: Roblox relies on user reports to identify and take action against players using exploits.
-
-To ensure the script remains undetected, it is essential to:
-
-- **Optimize Performance**: Reduce the frequency of loop operations and minimize resource usage.
-- **Avoid Direct Modifications**: Where possible, avoid directly modifying server-side objects to reduce the risk of detection.
-- **Use Local Variables**: Store frequently accessed data in local variables to reduce the number of property access operations.
