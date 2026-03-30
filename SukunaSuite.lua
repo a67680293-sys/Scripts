@@ -1,274 +1,265 @@
--- [[ FORSAKEN: DIVINE DOMAIN - APEX OVERLORD v5.4 ]] --
--- VERSION: 2026.5.4 (GITHUB-SPEC UNABRIDGED)
--- STYLE: XAN-STYLE 3D RENDER (IMAGE 1 & 2 INTEGRATED)
--- POWER: ORIGINAL 4-6-4 HITBOX SYSTEM & HIGHLIGHT ESP
+-- [[ FORSAKEN: APEX DOMAIN - STEALTH PHASE v3.0 ]] --
+-- VERSION: 2026.5.5 (FULL UNABRIDGED MASTER)
+-- STYLE: XAN 3D RENDER + SUKUNA DOMAIN
+-- POWER: ORIGINAL 4-6-4 HITBOXES & PREDICTIVE MAGNETISM
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 -- [[ MASTER CONFIGURATION ]] --
-_G.ApexConfig = {
-    Main = {
-        Enabled = false,
-        TeamCheck = true,
-        ShowUI = true
-    },
-    Combat = {
-        HitboxMult = 6,
-        MagnetRange = 120,
-        Prediction = 0.18,
-        AutoAttack = false
-    },
-    Movement = {
-        SpeedMult = 1,
-        JumpForce = 1,
-        Noclip = false,
-        InfStamina = false
-    },
-    ESP = {
-        Active = false,
-        ShowPlayers = true,
-        ShowGenerators = false
-    },
+local Config = {
+    Enabled = false,
+    HitboxMultiplier = 6,
+    MagnetRange = 120,
+    PredictionTime = 0.18,
+    TeamCheck = true,
+    InfStamina = false,
+    ESP = false,
+    Aimbot = false,
+    AimbotSmoothness = 0.5,
+    AimbotFOV = 90,
     Assets = {
         MainBG = "rbxassetid://14451731631", -- Image 1
         MinimizeIcon = "rbxassetid://14451731631" -- Image 2
     }
 }
 
--- [[ UI CONSTRUCTION: ACE 3D RENDER ENGINE ]] --
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "Apex_Domain_Master_400"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+-- [[ UI SYSTEM: 3D SHADOW RENDER ENGINE ]] --
+local UI = {}
+UI.ScreenGui = Instance.new("ScreenGui")
+UI.ScreenGui.Name = "Apex_Domain_v3_Final"
+UI.ScreenGui.ResetOnSpawn = false
+UI.ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+UI.ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-local MainShadow = Instance.new("Frame", ScreenGui)
-MainShadow.Size = UDim2.new(0, 526, 0, 406)
-MainShadow.Position = UDim2.new(0.5, -263, 0.5, -203)
-MainShadow.BackgroundColor3 = Color3.new(0,0,0)
-MainShadow.BackgroundTransparency = 0.5
-MainShadow.BorderSizePixel = 0
-Instance.new("UICorner", MainShadow).CornerRadius = UDim.new(0, 20)
+-- 3D Shadow Layer (Depth)
+UI.Shadow = Instance.new("Frame", UI.ScreenGui)
+UI.Shadow.Size = UDim2.new(0, 526, 0, 426)
+UI.Shadow.Position = UDim2.new(0.5, -263, 0.5, -213)
+UI.Shadow.BackgroundColor3 = Color3.new(0,0,0)
+UI.Shadow.BackgroundTransparency = 0.5
+UI.Shadow.BorderSizePixel = 0
+Instance.new("UICorner", UI.Shadow).CornerRadius = UDim.new(0, 15)
 
-local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 520, 0, 400)
-Main.Position = UDim2.new(0.5, -260, 0.5, -200)
-Main.BackgroundColor3 = Color3.fromRGB(13, 7, 24)
-Main.BorderSizePixel = 0
-Main.Active = true
-Main.Draggable = true
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 20)
+-- Main Frame
+UI.Main = Instance.new("Frame", UI.ScreenGui)
+UI.Main.Size = UDim2.new(0, 520, 0, 420)
+UI.Main.Position = UDim2.new(0.5, -260, 0.5, -210)
+UI.Main.BackgroundColor3 = Color3.fromRGB(10, 5, 20)
+UI.Main.BorderSizePixel = 0
+UI.Main.Active = true
+UI.Main.Draggable = true
+Instance.new("UICorner", UI.Main).CornerRadius = UDim.new(0, 15)
 
--- Image 1: Sukuna Domain Background
-local BgImage = Instance.new("ImageLabel", Main)
-BgImage.Size = UDim2.new(1, 0, 1, 0)
-BgImage.Image = _G.ApexConfig.Assets.MainBG
-BgImage.ImageTransparency = 0.75
-BgImage.ScaleType = Enum.ScaleType.Crop
-BgImage.ZIndex = 0
-Instance.new("UICorner", BgImage).CornerRadius = UDim.new(0, 20)
+-- Background Image (Sukuna Domain)
+UI.BG = Instance.new("ImageLabel", UI.Main)
+UI.BG.Size = UDim2.new(1, 0, 1, 0)
+UI.BG.Image = Config.Assets.MainBG
+UI.BG.ImageTransparency = 0.7
+UI.BG.ScaleType = Enum.ScaleType.Crop
+UI.BG.ZIndex = 0
+Instance.new("UICorner", UI.BG).CornerRadius = UDim.new(0, 15)
 
-local Sidebar = Instance.new("Frame", Main)
-Sidebar.Size = UDim2.new(0, 150, 0.86, 0)
-Sidebar.Position = UDim2.new(0, 0, 0.14, 0)
-Sidebar.BackgroundColor3 = Color3.fromRGB(18, 12, 30)
-Sidebar.BackgroundTransparency = 0.2
-Sidebar.ZIndex = 1
-Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 15)
+-- Sidebar
+UI.Sidebar = Instance.new("Frame", UI.Main)
+UI.Sidebar.Size = UDim2.new(0, 130, 1, 0)
+UI.Sidebar.BackgroundColor3 = Color3.fromRGB(15, 10, 30)
+UI.Sidebar.BackgroundTransparency = 0.2
+UI.Sidebar.ZIndex = 1
+Instance.new("UICorner", UI.Sidebar).CornerRadius = UDim.new(0, 15)
 
-local Scroll = Instance.new("ScrollingFrame", Main)
-Scroll.Size = UDim2.new(0, 345, 0, 335)
-Scroll.Position = UDim2.new(0, 160, 0.14, 0)
-Scroll.BackgroundTransparency = 1
-Scroll.CanvasSize = UDim2.new(0, 0, 6, 0) -- Expanded for 400+ line scale
-Scroll.ScrollBarThickness = 3
-Scroll.ZIndex = 2
-local ListLayout = Instance.new("UIListLayout", Scroll)
-ListLayout.Padding = UDim.new(0, 12)
+-- Close Button (To Minimize)
+UI.CloseBtn = Instance.new("TextButton", UI.Sidebar)
+UI.CloseBtn.Size = UDim2.new(1, -20, 0, 45)
+UI.CloseBtn.Position = UDim2.new(0, 10, 0.88, 0)
+UI.CloseBtn.Text = "Seal Domain"
+UI.CloseBtn.TextColor3 = Color3.new(1, 1, 1)
+UI.CloseBtn.Font = Enum.Font.GothamBold
+UI.CloseBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+UI.CloseBtn.ZIndex = 2
+Instance.new("UICorner", UI.CloseBtn)
 
--- [[ 3D COMPONENT FACTORY ]] --
-local function AddToggle(text, tab, key)
-    local Frame = Instance.new("Frame", Scroll)
-    Frame.Size = UDim2.new(1, -10, 0, 45)
-    Frame.BackgroundTransparency = 1
-    
-    local Shadow = Instance.new("Frame", Frame)
-    Shadow.Size = UDim2.new(1, 0, 1, 0)
-    Shadow.Position = UDim2.new(0, 2, 0, 2)
-    Shadow.BackgroundColor3 = Color3.new(0,0,0)
-    Shadow.ZIndex = 1
-    Instance.new("UICorner", Shadow)
+-- Content Scroll Frame
+UI.Scroll = Instance.new("ScrollingFrame", UI.Main)
+UI.Scroll.Size = UDim2.new(0, 360, 0, 350)
+UI.Scroll.Position = UDim2.new(0, 140, 0, 55)
+UI.Scroll.BackgroundTransparency = 1
+UI.Scroll.CanvasSize = UDim2.new(0, 0, 5, 0) -- High Canvas for Unabridged spec
+UI.Scroll.ScrollBarThickness = 2
+UI.Scroll.ZIndex = 2
+Instance.new("UIListLayout", UI.Scroll).Padding = UDim.new(0, 12)
 
-    local Btn = Instance.new("TextButton", Frame)
-    Btn.Size = UDim2.new(1, 0, 1, 0)
-    Btn.BackgroundColor3 = Color3.fromRGB(25, 15, 40)
-    Btn.Text = "  " .. text .. " - OFF"
-    Btn.TextColor3 = Color3.new(1,1,1)
-    Btn.Font = Enum.Font.GothamBold
-    Btn.TextXAlignment = Enum.TextXAlignment.Left
-    Btn.ZIndex = 2
-    Instance.new("UICorner", Btn)
+-- [[ COMPONENT BUILDERS ]] --
+function UI:CreateToggle(text, key)
+    local btn = Instance.new("TextButton", UI.Scroll)
+    btn.Size = UDim2.new(1, -10, 0, 40)
+    btn.BackgroundColor3 = Color3.fromRGB(30, 25, 50)
+    btn.Text = "  " .. text .. ": OFF"
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    Instance.new("UICorner", btn)
 
-    Btn.MouseButton1Click:Connect(function()
-        _G.ApexConfig[tab][key] = not _G.ApexConfig[tab][key]
-        local state = _G.ApexConfig[tab][key]
-        Btn.Text = "  " .. text .. " - " .. (state and "ON" or "OFF")
-        Btn.BackgroundColor3 = state and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(25, 15, 40)
+    btn.MouseButton1Click:Connect(function()
+        Config[key] = not Config[key]
+        btn.Text = "  " .. text .. ": " .. (Config[key] and "ON" or "OFF")
+        btn.BackgroundColor3 = Config[key] and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(30, 25, 50)
     end)
 end
 
-local function AddSlider(text, tab, key, min, max, default)
-    local Frame = Instance.new("Frame", Scroll)
-    Frame.Size = UDim2.new(1, -10, 0, 65)
-    Frame.BackgroundTransparency = 1
+function UI:CreateSlider(text, key, min, max, default)
+    local frame = Instance.new("Frame", UI.Scroll)
+    frame.Size = UDim2.new(1, -10, 0, 60)
+    frame.BackgroundTransparency = 1
 
-    local Label = Instance.new("TextLabel", Frame)
-    Label.Size = UDim2.new(1, 0, 0, 25)
-    Label.Text = text .. ": " .. default
-    Label.TextColor3 = Color3.fromRGB(220, 220, 255)
-    Label.Font = Enum.Font.GothamBold
-    Label.BackgroundTransparency = 1
+    local label = Instance.new("TextLabel", frame)
+    label.Size = UDim2.new(1, 0, 0, 25)
+    label.Text = text .. ": " .. default
+    label.TextColor3 = Color3.new(0.8, 0.8, 1)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.GothamBold
 
-    local Rail = Instance.new("Frame", Frame)
-    Rail.Size = UDim2.new(1, 0, 0, 8)
-    Rail.Position = UDim2.new(0, 0, 0.7, 0)
-    Rail.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-    Instance.new("UICorner", Rail)
+    local rail = Instance.new("Frame", frame)
+    rail.Size = UDim2.new(1, 0, 0, 8)
+    rail.Position = UDim2.new(0, 0, 0.7, 0)
+    rail.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    Instance.new("UICorner", rail)
 
-    local Fill = Instance.new("Frame", Rail)
-    Fill.Size = UDim2.new((default-min)/(max-min), 0, 1, 0)
-    Fill.BackgroundColor3 = Color3.fromRGB(180, 0, 255)
-    Instance.new("UICorner", Fill)
+    local fill = Instance.new("Frame", rail)
+    fill.Size = UDim2.new((default-min)/(max-min), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(180, 0, 255)
+    Instance.new("UICorner", fill)
 
-    local Trig = Instance.new("TextButton", Rail)
-    Trig.Size = UDim2.new(1, 0, 1, 0)
-    Trig.BackgroundTransparency = 1
-    Trig.Text = ""
+    local trigger = Instance.new("TextButton", rail)
+    trigger.Size = UDim2.new(1, 0, 1, 0)
+    trigger.BackgroundTransparency = 1
+    trigger.Text = ""
 
-    Trig.MouseButton1Down:Connect(function()
-        local Move = RunService.RenderStepped:Connect(function()
+    trigger.MouseButton1Down:Connect(function()
+        local conn
+        conn = RunService.RenderStepped:Connect(function()
             local mouse = UserInputService:GetMouseLocation().X
-            local perc = math.clamp((mouse - Rail.AbsolutePosition.X) / Rail.AbsoluteSize.X, 0, 1)
-            Fill.Size = UDim2.new(perc, 0, 1, 0)
+            local perc = math.clamp((mouse - rail.AbsolutePosition.X) / rail.AbsoluteSize.X, 0, 1)
             local val = math.round(min + (perc * (max - min)))
-            Label.Text = text .. ": " .. val
-            _G.ApexConfig[tab][key] = val
+            fill.Size = UDim2.new(perc, 0, 1, 0)
+            label.Text = text .. ": " .. val
+            Config[key] = val
         end)
-        UserInputService.InputEnded:Connect(function(i)
-            if i.UserInputType == Enum.UserInputType.MouseButton1 then Move:Disconnect() end
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then conn:Disconnect() end
         end)
     end)
 end
 
--- Initialize Components
-AddToggle("🔮 Master Power", "Main", "Enabled")
-AddToggle("🛡️ Team Check", "Main", "TeamCheck")
-AddToggle("👥 Player Highlight", "ESP", "Active")
-AddToggle("🏃 Infinite Stamina", "Movement", "InfStamina")
-AddSlider("🎯 Hitbox Scale", "Combat", "HitboxMult", 1, 20, 6)
-AddSlider("⏳ Prediction", "Combat", "Prediction", 0.05, 0.5, 0.18)
+-- Populate
+UI:CreateToggle("Master Combat", "Enabled")
+UI:CreateToggle("Aimbot Assist", "Aimbot")
+UI:CreateToggle("Visual Highlights", "ESP")
+UI:CreateToggle("Infinite Stamina", "InfStamina")
+UI:CreateSlider("Hitbox Scale", "HitboxMultiplier", 1, 20, 6)
+UI:CreateSlider("Aim FOV", "AimbotFOV", 30, 360, 90)
 
--- [[ ORIGINAL 4-6-4 HITBOX & ESP SYSTEM ]] --
-local function UpdateVisuals()
+-- [[ MINIMIZE SYSTEM (Image 2) ]] --
+UI.SukunaIcon = Instance.new("ImageButton", UI.ScreenGui)
+UI.SukunaIcon.Size = UDim2.new(0, 100, 0, 100)
+UI.SukunaIcon.Image = Config.Assets.MinimizeIcon
+UI.SukunaIcon.Position = UDim2.new(0.5, -50, 0.8, 0)
+UI.SukunaIcon.Visible = false
+Instance.new("UICorner", UI.SukunaIcon).CornerRadius = UDim.new(1, 0)
+local Stroke = Instance.new("UIStroke", UI.SukunaIcon)
+Stroke.Thickness = 4
+Stroke.Color = Color3.new(1,0,0)
+
+UI.CloseBtn.MouseButton1Click:Connect(function()
+    UI.Main.Visible = false; UI.Shadow.Visible = false; UI.SukunaIcon.Visible = true
+end)
+UI.SukunaIcon.MouseButton1Click:Connect(function()
+    UI.Main.Visible = true; UI.Shadow.Visible = true; UI.SukunaIcon.Visible = false
+end)
+
+-- [[ CORE POWER ENGINE ]] --
+local function getTarget()
+    local best, dist = nil, Config.MagnetRange
     for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character then
-            local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                -- Original Hitbox Logic
-                if _G.ApexConfig.Main.Enabled and _G.ApexConfig.Combat.HitboxMult > 0 then
-                    local mult = _G.ApexConfig.Combat.HitboxMult
-                    hrp.Size = Vector3.new(4, 6, 4) * (mult / 2)
-                    hrp.Transparency = 0.5
-                    hrp.Material = Enum.Material.Neon
-                    hrp.CanCollide = false
-                    hrp.Color = (p.Team == LocalPlayer.Team) and Color3.new(0,1,0) or Color3.new(1,0,0)
-                else
-                    hrp.Size = Vector3.new(2, 2, 1)
-                    hrp.Transparency = 1
-                end
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            if Config.TeamCheck and p.Team == LocalPlayer.Team then continue end
+            local mag = (p.Character.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+            if mag < dist then best = p.Character.HumanoidRootPart; dist = mag end
+        end
+    end
+    return best
+end
 
-                -- Original Highlight ESP
-                local existingHighlight = p.Character:FindFirstChild("ApexESP")
-                if _G.ApexConfig.ESP.Active then
-                    if not existingHighlight then
-                        local highlight = Instance.new("Highlight", p.Character)
-                        highlight.Name = "ApexESP"
-                        highlight.FillColor = Color3.fromRGB(0, 255, 0)
-                        highlight.FillTransparency = 0.7
-                        highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
+-- Predictive Projectile Magnetism
+workspace.ChildAdded:Connect(function(obj)
+    if not Config.Enabled then return end
+    task.wait(0.01)
+    local n = obj.Name:lower()
+    if n:find("jar") or n:find("crystal") or n:find("axe") or n:find("slash") then
+        local t = getTarget()
+        if t then
+            local heart
+            heart = RunService.Heartbeat:Connect(function()
+                if obj and obj.Parent and t.Parent then
+                    local p = t.Position + (t.AssemblyLinearVelocity * Config.PredictionTime)
+                    obj.AssemblyLinearVelocity = (p - obj.Position).Unit * 200
+                else heart:Disconnect() end
+            end)
+        end
+    end
+end)
+
+-- Main Physics Loop (Hitboxes + ESP + Stamina)
+RunService.RenderStepped:Connect(function()
+    if Config.Enabled then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = p.Character.HumanoidRootPart
+                local hum = p.Character:FindFirstChildOfClass("Humanoid")
+                
+                if hum and hum.Health > 0 then
+                    -- THE 4-6-4 HITBOX SYSTEM
+                    hrp.Size = Vector3.new(4, 6, 4) * (Config.HitboxMultiplier / 2)
+                    hrp.CanCollide = false
+                    
+                    if Config.ESP then
+                        hrp.Transparency = 0.5
+                        hrp.Material = Enum.Material.Neon
+                        hrp.Color = (p.Team == LocalPlayer.Team) and Color3.new(0,1,0) or Color3.new(1,0,0)
+                    else
+                        hrp.Transparency = 1
                     end
-                elseif existingHighlight then
-                    existingHighlight:Destroy()
                 end
             end
         end
     end
-end
-
--- [[ PHYSICS MAGNETISM (UNABRIDGED) ]] --
-workspace.ChildAdded:Connect(function(obj)
-    if not _G.ApexConfig.Main.Enabled then return end
-    task.wait(0.01)
-    local n = obj.Name:lower()
-    if n:find("jar") or n:find("crystal") or n:find("axe") or n:find("slash") then
-        local heart
-        heart = RunService.Heartbeat:Connect(function()
-            if obj and obj.Parent then
-                local best, dist = nil, _G.ApexConfig.Combat.MagnetRange
-                for _, player in pairs(Players:GetPlayers()) do
-                    if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                        if _G.ApexConfig.Main.TeamCheck and player.Team == LocalPlayer.Team then continue end
-                        local mag = (player.Character.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-                        if mag < dist then best = player.Character.HumanoidRootPart; dist = mag end
-                    end
-                end
-                if best then
-                    local p = best.Position + (best.AssemblyLinearVelocity * _G.ApexConfig.Combat.Prediction)
-                    obj.AssemblyLinearVelocity = (p - obj.Position).Unit * 200
-                end
-            else heart:Disconnect() end
-        end)
+    
+    if Config.InfStamina and LocalPlayer.Character then
+        local s = LocalPlayer.Character:FindFirstChild("Stamina", true)
+        if s and s:IsA("NumberValue") then s.Value = 100 end
     end
 end)
 
--- [[ MAIN RENDER LOOP ]] --
-RunService.RenderStepped:Connect(function()
-    UpdateVisuals()
-    if _G.ApexConfig.Movement.InfStamina and LocalPlayer.Character then
-        local stam = LocalPlayer.Character:FindFirstChild("Stamina", true)
-        if stam and stam:IsA("NumberValue") then stam.Value = 100 end
+-- Aimbot Assist
+task.spawn(function()
+    while task.wait() do
+        if Config.Enabled and Config.Aimbot then
+            local t = getTarget()
+            if t then
+                local screenPoint = Camera:WorldToScreenPoint(t.Position)
+                local mousePos = UserInputService:GetMouseLocation()
+                local delta = Vector2.new(screenPoint.X - mousePos.X, screenPoint.Y - mousePos.Y)
+                if typeof(mousemoverel) == "function" then
+                    mousemoverel(delta.X / Config.AimbotSmoothness, delta.Y / Config.AimbotSmoothness)
+                end
+            end
+        end
     end
 end)
 
--- [[ SUKUNA MINIMIZE (IMAGE 2) ]] --
-local SukunaCircle = Instance.new("ImageButton", ScreenGui)
-SukunaCircle.Size = UDim2.new(0, 90, 0, 90)
-SukunaCircle.Position = UDim2.new(0.5, -45, 0.8, 0)
-SukunaCircle.Image = _G.ApexConfig.Assets.MinimizeIcon
-SukunaCircle.Visible = false
-Instance.new("UICorner", SukunaCircle).CornerRadius = UDim.new(1, 0)
-local Stroke = Instance.new("UIStroke", SukunaCircle)
-Stroke.Thickness = 4; Stroke.Color = Color3.new(1,0,0)
-
-local CloseBtn = Instance.new("TextButton", Main)
-CloseBtn.Size = UDim2.new(0, 35, 0, 35)
-CloseBtn.Position = UDim2.new(0.92, 0, 0.02, 0)
-CloseBtn.Text = "X"
-CloseBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-CloseBtn.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", CloseBtn)
-
-CloseBtn.MouseButton1Click:Connect(function()
-    Main.Visible = false; MainShadow.Visible = false; SukunaCircle.Visible = true
-end)
-SukunaCircle.MouseButton1Click:Connect(function()
-    Main.Visible = true; MainShadow.Visible = true; SukunaCircle.Visible = false
-end)
-
-print("_domain expansion: APEX DOMINION UNABRIDGED LOADED.")
+print("領域展開: APEX UNABRIDGED v3.0 LOADED.")
