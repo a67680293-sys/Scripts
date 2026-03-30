@@ -839,11 +839,23 @@ do
     UI.Connections.StaminaLoop = RunService.Heartbeat:Connect(SetStamina)
 end
 
--- Aimbot System
+    
+    UI.Connections.AimbotLoop = RunService.RenderStepped:Connect(function()
+        if not Config.Enabled or not Config.Aimbot then return end
+        
+        local target = GetTarget()
+        if target then
+            AimAt(target)
+        end
+    end)
+end
+
+-- ==================== MOBILE-OPTIMIZED AIMBOT CORE ====================
 do
     local function GetTarget()
         local bestTarget, bestDist = nil, Config.AimbotFOV * 10
-        local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        local myChar = LocalPlayer.Character
+        local myHrp = myChar and myChar:FindFirstChild("HumanoidRootPart")
         if not myHrp then return nil end
         
         local myPos = myHrp.Position
@@ -858,24 +870,23 @@ do
             local hum = char:FindFirstChild("Humanoid")
             if hum and hum.Health <= 0 then continue end
             
-            local aimPart = nil
-            if Config.AimPriority == "Head" then
-                aimPart = char:FindFirstChild("Head")
-            else
-                aimPart = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
-            end
+            -- Determine aim part based on priority
+            local aimPart = char:FindFirstChild(Config.AimPriority) or char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
             
             if aimPart then
                 local screenPos, onScreen = Camera:WorldToViewportPoint(aimPart.Position)
-                local dist = (aimPart.Position - myPos).Magnitude
                 
+                -- FOV check (Screen Center)
                 local screenCenter = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
                 local offset = Vector2.new(screenPos.X, screenPos.Y) - screenCenter
                 local distFromCenter = offset.Magnitude
                 
-                if distFromCenter <= Config.AimbotFOV and dist < bestDist then
+                -- Distance check (World Space)
+                local worldDist = (aimPart.Position - myPos).Magnitude
+                
+                if onScreen and distFromCenter <= Config.AimbotFOV and worldDist < bestDist and worldDist <= Config.MaxAimDistance then
                     bestTarget = aimPart
-                    bestDist = dist
+                    bestDist = worldDist
                 end
             end
         end
@@ -884,38 +895,44 @@ do
     end
     
     local function AimAt(targetPart)
-        if not targetPart then return end
+        if not targetPart or not Config.Aimbot then return end
         
-        local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
-        if not onScreen then return end
+        local targetPos = targetPart.Position
         
-        local mouse = LocalPlayer:GetMouse()
-        local targetX, targetY = screenPos.X, screenPos.Y
-        
-        if Config.SilentAim then
-            local offset = Vector2.new(
-                (math.random() - 0.5) * Config.AimSmoothing * 10,
-                (math.random() - 0.5) * Config.AimSmoothing * 10
-            )
-            pcall(function()
-                mouse.MoveTo(targetX + offset.X, targetY + offset.Y)
-            end)
-        else
-            local currentPos = Vector2.new(mouse.X, mouse.Y)
-            local direction = Vector2.new(targetX - currentPos.X, targetY - currentPos.Y)
-            local step = direction * Config.AimSmoothing
-            pcall(function()
-                mouse.MoveTo(currentPos.X + step.X, currentPos.Y + step.Y)
-            end)
+        -- Prediction Logic (Physics-Based)
+        if Config.PredictionAim then
+            local velocity = targetPart.AssemblyLinearVelocity
+            -- Apply prediction with user-defined sensitivity
+            targetPos = targetPos + (velocity * (Config.PredictionTime + Config.PredictionAmmount))
         end
+        
+        -- Delta/Mobile Smooth Camera Lerp
+        -- smoothing: 1 = Instant, 0.01 = Very Slow/Legit
+        local lookAt = CFrame.new(Camera.CFrame.Position, targetPos)
+        Camera.CFrame = Camera.CFrame:Lerp(lookAt, math.clamp(Config.AimSmoothing, 0.01, 1))
     end
     
+    -- Main Aimbot Loop
     UI.Connections.AimbotLoop = RunService.RenderStepped:Connect(function()
         if not Config.Enabled or not Config.Aimbot then return end
         
-        local target = GetTarget()
-        if target then
-            AimAt(target)
+        -- Trigger check: works for both Right-Click (PC) and Screen Tap (Mobile)
+        local isAiming = UserInputService:IsMouseButtonPressed(Config.AimbotKeybind) or UserInputService:IsKeyDown(Enum.KeyCode.ButtonL2)
+        
+        if isAiming then
+            local target = GetTarget()
+            if target then
+                AimAt(target)
+                
+                -- Silent Aim Logic (Redirects tool origin if enabled)
+                if Config.SilentAim and LocalPlayer.Character then
+                    local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                    if tool and tool:FindFirstChild("Handle") then
+                        -- Forces the tool to point exactly at the predictive target
+                        tool.Handle.CFrame = CFrame.new(tool.Handle.Position, target.Position)
+                    end
+                end
+            end
         end
     end)
 end
