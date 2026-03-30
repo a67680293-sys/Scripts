@@ -839,17 +839,6 @@ do
     UI.Connections.StaminaLoop = RunService.Heartbeat:Connect(SetStamina)
 end
 
-    
-    UI.Connections.AimbotLoop = RunService.RenderStepped:Connect(function()
-        if not Config.Enabled or not Config.Aimbot then return end
-        
-        local target = GetTarget()
-        if target then
-            AimAt(target)
-        end
-    end)
-end
-
 -- ==================== MOBILE-OPTIMIZED AIMBOT CORE ====================
 do
     local function GetTarget()
