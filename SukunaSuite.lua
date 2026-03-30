@@ -1,17 +1,17 @@
--- [[ FORSAKEN: APEX DOMINION v5.0 ]] --
--- Version: 2026.5.0 (ULTRA STEALTH / FULL PHYSICS)
--- TARGET: Roblox Forsaken (2026 Update)
--- BYPASS: ANTI-CHEAT EVASION / SERVER-SIDE SIMULATION
+-- [[ FORSAKEN: DIVINE DOMAIN - APEX OVERLORD v5.4 ]] --
+-- VERSION: 2026.5.4 (GITHUB-SPEC UNABRIDGED)
+-- STYLE: XAN-STYLE 3D RENDER (IMAGE 1 & 2 INTEGRATED)
+-- POWER: ORIGINAL 4-6-4 HITBOX SYSTEM & HIGHLIGHT ESP
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- [[ CONFIGURATION ]] --
+-- [[ MASTER CONFIGURATION ]] --
 _G.ApexConfig = {
     Main = {
         Enabled = false,
@@ -22,390 +22,253 @@ _G.ApexConfig = {
         HitboxMult = 6,
         MagnetRange = 120,
         Prediction = 0.18,
-        AutoAttack = false,
-        AutoBlock = false
+        AutoAttack = false
     },
     Movement = {
         SpeedMult = 1,
         JumpForce = 1,
-        Noclip = false
+        Noclip = false,
+        InfStamina = false
     },
     ESP = {
         Active = false,
-        ShowGenerators = false,
-        ShowPlayers = true
+        ShowPlayers = true,
+        ShowGenerators = false
     },
-    Stealth = {
-        AntiDetect = true,
-        FrameSkip = false
+    Assets = {
+        MainBG = "rbxassetid://14451731631", -- Image 1
+        MinimizeIcon = "rbxassetid://14451731631" -- Image 2
     }
 }
 
--- [[ MODULE: XAN-STYLE ANIME UI ]] --
-local AceUI = {}
-AceUI.Screen = Instance.new("ScreenGui")
-AceUI.Screen.Name = "Apex_Domain_XAN"
-AceUI.Screen.ResetOnSpawn = false
-AceUI.Screen.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-AceUI.Screen.Parent = game:GetService("CoreGui")
+-- [[ UI CONSTRUCTION: ACE 3D RENDER ENGINE ]] --
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "Apex_Domain_Master_400"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-AceUI.Main = Instance.new("Frame", AceUI.Screen)
-AceUI.Main.Size = UDim2.new(0, 600, 0, 450)
-AceUI.Main.Position = UDim2.new(0.5, -300, 0.5, -225)
-AceUI.Main.BackgroundColor3 = Color3.fromRGB(13, 7, 24)
-AceUI.Main.BorderSizePixel = 0
-AceUI.Main.Active = true
-AceUI.Main.Draggable = true
-Instance.new("UICorner", AceUI.Main).CornerRadius = UDim.new(0, 20)
+local MainShadow = Instance.new("Frame", ScreenGui)
+MainShadow.Size = UDim2.new(0, 526, 0, 406)
+MainShadow.Position = UDim2.new(0.5, -263, 0.5, -203)
+MainShadow.BackgroundColor3 = Color3.new(0,0,0)
+MainShadow.BackgroundTransparency = 0.5
+MainShadow.BorderSizePixel = 0
+Instance.new("UICorner", MainShadow).CornerRadius = UDim.new(0, 20)
 
--- Background: Domain Expansion (Sukuna Theme)
-AceUI.BG = Instance.new("ImageLabel", AceUI.Main)
-AceUI.BG.Size = UDim2.new(1, 0, 1, 0)
-AceUI.BG.Image = "rbxassetid://14451731631" -- sukuna domain expansion image
-AceUI.BG.ImageTransparency = 0.4
-AceUI.BG.ScaleType = Enum.ScaleType.Crop
-AceUI.BG.ZIndex = 1
-Instance.new("UICorner", AceUI.BG).CornerRadius = UDim.new(0, 20)
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 520, 0, 400)
+Main.Position = UDim2.new(0.5, -260, 0.5, -200)
+Main.BackgroundColor3 = Color3.fromRGB(13, 7, 24)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 20)
 
-AceUI.Header = Instance.new("TextLabel", AceUI.Main)
-AceUI.Header.Size = UDim2.new(1, 0, 0, 60)
-AceUI.Header.BackgroundColor3 = Color3.fromRGB(25, 15, 40)
-AceUI.Header.Position = UDim2.new(0, 0, 0, 0)
-AceUI.Header.Text = "DOMAIN EXPANSION: APEX DOMINION"
-AceUI.Header.TextColor3 = Color3.fromRGB(255, 255, 255)
-AceUI.Header.Font = Enum.Font.GothamBlack
-AceUI.Header.TextSize = 24
-AceUI.Header.BorderSizePixel = 0
+-- Image 1: Sukuna Domain Background
+local BgImage = Instance.new("ImageLabel", Main)
+BgImage.Size = UDim2.new(1, 0, 1, 0)
+BgImage.Image = _G.ApexConfig.Assets.MainBG
+BgImage.ImageTransparency = 0.75
+BgImage.ScaleType = Enum.ScaleType.Crop
+BgImage.ZIndex = 0
+Instance.new("UICorner", BgImage).CornerRadius = UDim.new(0, 20)
 
-AceUI.SubHeader = Instance.new("TextLabel", AceUI.Main)
-AceUI.SubHeader.Size = UDim2.new(1, 0, 0, 30)
-AceUI.SubHeader.Position = UDim2.new(0, 0, 0.13, 0)
-AceUI.SubHeader.BackgroundColor3 = Color3.fromRGB(20, 10, 30)
-AceUI.SubHeader.Text = " v5.0 | UNDETECTED | HIGH-FREQUENCY LOOP"
-AceUI.SubHeader.TextColor3 = Color3.fromRGB(180, 180, 255)
-AceUI.SubHeader.Font = Enum.Font.GothamSemibold
-AceUI.SubHeader.TextSize = 14
-AceUI.SubHeader.BorderSizePixel = 0
+local Sidebar = Instance.new("Frame", Main)
+Sidebar.Size = UDim2.new(0, 150, 0.86, 0)
+Sidebar.Position = UDim2.new(0, 0, 0.14, 0)
+Sidebar.BackgroundColor3 = Color3.fromRGB(18, 12, 30)
+Sidebar.BackgroundTransparency = 0.2
+Sidebar.ZIndex = 1
+Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 15)
 
-AceUI.Sidebar = Instance.new("Frame", AceUI.Main)
-AceUI.Sidebar.Size = UDim2.new(0, 150, 1, 0)
-AceUI.Sidebar.Position = UDim2.new(0, 0, 0.14, 0)
-AceUI.Sidebar.BackgroundColor3 = Color3.fromRGB(18, 12, 30)
-AceUI.Sidebar.BorderSizePixel = 0
-Instance.new("UICorner", AceUI.Sidebar).CornerRadius = UDim.new(0, 15)
+local Scroll = Instance.new("ScrollingFrame", Main)
+Scroll.Size = UDim2.new(0, 345, 0, 335)
+Scroll.Position = UDim2.new(0, 160, 0.14, 0)
+Scroll.BackgroundTransparency = 1
+Scroll.CanvasSize = UDim2.new(0, 0, 6, 0) -- Expanded for 400+ line scale
+Scroll.ScrollBarThickness = 3
+Scroll.ZIndex = 2
+local ListLayout = Instance.new("UIListLayout", Scroll)
+ListLayout.Padding = UDim.new(0, 12)
 
-AceUI.Content = Instance.new("Frame", AceUI.Main)
-AceUI.Content.Size = UDim2.new(0, 440, 1, 0)
-AceUI.Content.Position = UDim2.new(0, 155, 0.14, 0)
-AceUI.Content.BackgroundColor3 = Color3.fromRGB(15, 9, 25)
-AceUI.Content.BorderSizePixel = 0
-Instance.new("UICorner", AceUI.Content).CornerRadius = UDim.new(0, 15)
-
-AceUI.Scroll = Instance.new("ScrollingFrame", AceUI.Content)
-AceUI.Scroll.Size = UDim2.new(1, -20, 1, -20)
-AceUI.Scroll.Position = UDim2.new(0, 10, 0, 20)
-AceUI.Scroll.BackgroundTransparency = 1
-AceUI.Scroll.CanvasSize = UDim2.new(0, 0, 4, 0)
-AceUI.Scroll.ScrollBarThickness = 4
-AceUI.Scroll.ScrollBarImageColor3 = Color3.fromRGB(180, 0, 255)
-Instance.new("UIListLayout", AceUI.Scroll).Padding = UDim.new(0, 8)
-
-local ComponentCount = 0
-function AceUI:CreateToggle(text, key1, key2, default)
-    ComponentCount = ComponentCount + 1
-    local btn = Instance.new("TextButton", AceUI.Scroll)
-    btn.Size = UDim2.new(1, 0, 0, 45)
-    btn.BackgroundColor3 = Color3.fromRGB(25, 15, 40)
-    btn.Text = text .. " - " .. (default and "ON" or "OFF")
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.GothamBold
-    Instance.new("UICorner", btn)
+-- [[ 3D COMPONENT FACTORY ]] --
+local function AddToggle(text, tab, key)
+    local Frame = Instance.new("Frame", Scroll)
+    Frame.Size = UDim2.new(1, -10, 0, 45)
+    Frame.BackgroundTransparency = 1
     
-    local glow = Instance.new("UIStroke", btn)
-    glow.Color = Color3.fromRGB(180, 0, 255)
-    glow.Weight = 2
-    glow.Transparency = default and 0.2 or 0.8
+    local Shadow = Instance.new("Frame", Frame)
+    Shadow.Size = UDim2.new(1, 0, 1, 0)
+    Shadow.Position = UDim2.new(0, 2, 0, 2)
+    Shadow.BackgroundColor3 = Color3.new(0,0,0)
+    Shadow.ZIndex = 1
+    Instance.new("UICorner", Shadow)
 
-    btn.MouseButton1Click:Connect(function()
-        if key2 then
-            _G.ApexConfig[key1][key2] = not _G.ApexConfig[key1][key2]
-        else
-            _G.ApexConfig[key1] = not _G.ApexConfig[key1]
-        end
-        
-        local newState = key2 and _G.ApexConfig[key1][key2] or _G.ApexConfig[key1]
-        btn.Text = text .. " - " .. (newState and "ON" or "OFF")
-        
-        if newState then
-            btn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-            glow.Transparency = 0.2
-        else
-            btn.BackgroundColor3 = Color3.fromRGB(25, 15, 40)
-            glow.Transparency = 0.8
-        end
+    local Btn = Instance.new("TextButton", Frame)
+    Btn.Size = UDim2.new(1, 0, 1, 0)
+    Btn.BackgroundColor3 = Color3.fromRGB(25, 15, 40)
+    Btn.Text = "  " .. text .. " - OFF"
+    Btn.TextColor3 = Color3.new(1,1,1)
+    Btn.Font = Enum.Font.GothamBold
+    Btn.TextXAlignment = Enum.TextXAlignment.Left
+    Btn.ZIndex = 2
+    Instance.new("UICorner", Btn)
+
+    Btn.MouseButton1Click:Connect(function()
+        _G.ApexConfig[tab][key] = not _G.ApexConfig[tab][key]
+        local state = _G.ApexConfig[tab][key]
+        Btn.Text = "  " .. text .. " - " .. (state and "ON" or "OFF")
+        Btn.BackgroundColor3 = state and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(25, 15, 40)
     end)
-    
-    if default then
-        if key2 then _G.ApexConfig[key1][key2] = default else _G.ApexConfig[key1] = default end
-        btn.Text = text .. " - ON"
-        btn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-    end
 end
 
-function AceUI:CreateSlider(text, key1, key2, min, max, default)
-    ComponentCount = ComponentCount + 1
-    local frame = Instance.new("Frame", AceUI.Scroll)
-    frame.Size = UDim2.new(1, 0, 0, 60)
-    frame.BackgroundColor3 = Color3.fromRGB(22, 14, 35)
-    Instance.new("UICorner", frame)
+local function AddSlider(text, tab, key, min, max, default)
+    local Frame = Instance.new("Frame", Scroll)
+    Frame.Size = UDim2.new(1, -10, 0, 65)
+    Frame.BackgroundTransparency = 1
 
-    local label = Instance.new("TextLabel", frame)
-    label.Size = UDim2.new(1, 0, 0, 25)
-    label.Position = UDim2.new(0, 0, 0, 5)
-    label.Text = text .. ": " .. default
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(220, 220, 255)
-    label.Font = Enum.Font.GothamSemibold
+    local Label = Instance.new("TextLabel", Frame)
+    Label.Size = UDim2.new(1, 0, 0, 25)
+    Label.Text = text .. ": " .. default
+    Label.TextColor3 = Color3.fromRGB(220, 220, 255)
+    Label.Font = Enum.Font.GothamBold
+    Label.BackgroundTransparency = 1
 
-    local rail = Instance.new("Frame", frame)
-    rail.Size = UDim2.new(1, 0, 0, 6)
-    rail.Position = UDim2.new(0, 0, 0.65, 0)
-    rail.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    Instance.new("UICorner", rail)
+    local Rail = Instance.new("Frame", Frame)
+    Rail.Size = UDim2.new(1, 0, 0, 8)
+    Rail.Position = UDim2.new(0, 0, 0.7, 0)
+    Rail.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+    Instance.new("UICorner", Rail)
 
-    local fill = Instance.new("Frame", rail)
-    fill.Size = UDim2.new((default - min)/(max - min), 0, 1, 0)
-    fill.BackgroundColor3 = Color3.fromRGB(180, 0, 255) -- Anime Magenta
-    fill.BorderSizePixel = 0
-    Instance.new("UICorner", fill)
+    local Fill = Instance.new("Frame", Rail)
+    Fill.Size = UDim2.new((default-min)/(max-min), 0, 1, 0)
+    Fill.BackgroundColor3 = Color3.fromRGB(180, 0, 255)
+    Instance.new("UICorner", Fill)
 
-    local trigger = Instance.new("TextButton", rail)
-    trigger.Size = UDim2.new(1, 0, 1, 0)
-    trigger.BackgroundTransparency = 1
-    trigger.Text = ""
+    local Trig = Instance.new("TextButton", Rail)
+    Trig.Size = UDim2.new(1, 0, 1, 0)
+    Trig.BackgroundTransparency = 1
+    Trig.Text = ""
 
-    trigger.MouseButton1Down:Connect(function()
-        local conn
-        conn = RunService.RenderStepped:Connect(function()
-            local x = UserInputService:GetMouseLocation().X
-            local perc = math.clamp((x - rail.AbsolutePosition.X) / rail.AbsoluteSize.X, 0, 1)
+    Trig.MouseButton1Down:Connect(function()
+        local Move = RunService.RenderStepped:Connect(function()
+            local mouse = UserInputService:GetMouseLocation().X
+            local perc = math.clamp((mouse - Rail.AbsolutePosition.X) / Rail.AbsoluteSize.X, 0, 1)
+            Fill.Size = UDim2.new(perc, 0, 1, 0)
             local val = math.round(min + (perc * (max - min)))
-            fill.Size = UDim2.new(perc, 0, 1, 0)
-            label.Text = text .. ": " .. val
-            if key2 then
-                _G.ApexConfig[key1][key2] = val
-            else
-                _G.ApexConfig[key1] = val
-            end
+            Label.Text = text .. ": " .. val
+            _G.ApexConfig[tab][key] = val
         end)
-        UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                conn:Disconnect()
-            end
+        UserInputService.InputEnded:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.MouseButton1 then Move:Disconnect() end
         end)
     end)
 end
 
--- Populate UI
-AceUI:CreateToggle("🔮 Master System", "Main", "Enabled", false)
-AceUI:CreateToggle("🛡️ Team Check", "Main", "TeamCheck", true)
-AceUI:CreateToggle("👥 Player ESP", "ESP", "ShowPlayers", false)
-AceUI:CreateToggle("🏭 Generator ESP", "ESP", "ShowGenerators", false)
-AceUI:CreateToggle("🏃 Infinite Stamina", "Movement", "Noclip", false)
-AceUI:CreateToggle("⚔️ Neural Strike", "Combat", "AutoAttack", false)
+-- Initialize Components
+AddToggle("🔮 Master Power", "Main", "Enabled")
+AddToggle("🛡️ Team Check", "Main", "TeamCheck")
+AddToggle("👥 Player Highlight", "ESP", "Active")
+AddToggle("🏃 Infinite Stamina", "Movement", "InfStamina")
+AddSlider("🎯 Hitbox Scale", "Combat", "HitboxMult", 1, 20, 6)
+AddSlider("⏳ Prediction", "Combat", "Prediction", 0.05, 0.5, 0.18)
 
-AceUI:CreateSlider("🎯 Hitbox Mult", "Combat", "HitboxMult", 1, 15, 6)
-AceUI:CreateSlider("짢 Magnet Range", "Combat", "MagnetRange", 50, 300, 120)
-AceUI:CreateSlider("⏳ Prediction", "Combat", "Prediction", 0.05, 0.5, 0.18)
-AceUI:CreateSlider("🏃 Walk Speed", "Movement", "SpeedMult", 1, 20, 1)
-AceUI:CreateSlider("的能力 Jump Force", "Movement", "JumpForce", 1, 100, 1)
-
--- Sukuna Circle Toggle System
-AceUI.SukunaBtn = Instance.new("SurfaceGui", AceUI.Main)
-AceUI.SukunaBtn.Name = "SukunaSeal"
-AceUI.SukunaBtn.Size = UDim2.new(0, 100, 0, 100)
-AceUI.SukunaBtn positioning = "Bottom"
-AceUI.SukunaBtn.AlwaysOnTop = true
-AceUI.SukunaBtn.Enabled = false
-
-AceUI.SukunaFace = Instance.new("ImageLabel", AceUI.SukunaBtn)
-AceUI.SukunaFace.Size = UDim2.new(1, 0, 1, 0)
-AceUI.SukunaFace.Image = "rbxassetid://14451731631" -- Sukuna face image
-AceUI.SukunaFace.ImageTransparency = 1
-
-AceUI.Main.MouseEnter:Connect(function()
-    AceUI.SukunaBtn.Enabled = true
-    AceUI.SukunaBtn.Enabled = false
-end)
-
-AceUI.CloseBtn = Instance.new("TextButton", AceUI.Main)
-AceUI.CloseBtn.Size = UDim2.new(0, 40, 0, 40)
-AceUI.CloseBtn.Position = UDim2.new(1, -50, 0, 0)
-AceUI.CloseBtn.Text = "X"
-AceUI.CloseBtn.TextColor3 = Color3.new(1, 1, 1)
-AceUI.CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-Instance.new("UICorner", AceUI.CloseBtn)
-AceUI.CloseBtn.MouseButton1Click:Connect(function()
-    AceUI.Main.Visible = false
-    AceUI.SukunaBtn.Enabled = true
-    AceUI.SukunaFace.ImageTransparency = 0.3
-    task.delay(0.5, function()
-        AceUI.SukunaFace.ImageTransparency = 1
-        AceUI.SukunaBtn.Enabled = false
-        AceUI.Main.Visible = true
-    end)
-end)
-
--- [[ PHYSICS MODULE (SERVER-SIDE SAFE) ]] --
-local MagnetList = {}
-local AttackQueue = {}
-
--- Projectiles that can be manipulated
-local ProjectileTypes = {"jar", "crystal", "axe", "wall", "projectile", "slash"}
-
--- [[ CORE LOGIC ENGINE ]] --
-local function GetTarget()
-    local best, dist = nil, _G.ApexConfig.Combat.MagnetRange
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            if _G.ApexConfig.Main.TeamCheck and player.Team == LocalPlayer.Team then continue end
-            if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then continue end
-            local hrp = player.Character.HumanoidRootPart
-            local mag = (hrp.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-            if mag < dist then
-                best = hrp
-                dist = mag
-            end
-        end
-    end
-    return best
-end
-
-local function ESP_Update()
-    if not _G.ApexConfig.ESP.Active then return end
-    -- Clear old ESPs
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character then
-            local highlight = p.Character:FindFirstChild("ApexESP")
-            if highlight then highlight:Destroy() end
-        end
-    end
-    
-    if _G.ApexConfig.ESP.ShowPlayers then
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                local hrp = p.Character.HumanoidRootPart
-                local highlight = Instance.new("Highlight", hrp)
-                highlight.Name = "ApexESP"
-                highlight.FillColor = Color3.fromRGB(0, 255, 0)
-                highlight.FillTransparency = 0.7
-                highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
-                highlight.OutlineTransparency = 0.4
-            end
-        end
-    end
-end
-
-local function Hitbox_Size()
+-- [[ ORIGINAL 4-6-4 HITBOX & ESP SYSTEM ]] --
+local function UpdateVisuals()
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character then
             local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-            if hrp and _G.ApexConfig.Combat.HitboxMult > 0 then
-                local mult = _G.ApexConfig.Combat.HitboxMult
-                hrp.Size = Vector3.new(4, 6, 4) * (mult / 2)
-                if _G.ApexConfig.ESP.Active then
+            if hrp then
+                -- Original Hitbox Logic
+                if _G.ApexConfig.Main.Enabled and _G.ApexConfig.Combat.HitboxMult > 0 then
+                    local mult = _G.ApexConfig.Combat.HitboxMult
+                    hrp.Size = Vector3.new(4, 6, 4) * (mult / 2)
                     hrp.Transparency = 0.5
                     hrp.Material = Enum.Material.Neon
-                    hrp.Color = (p.Team == LocalPlayer.Team) and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+                    hrp.CanCollide = false
+                    hrp.Color = (p.Team == LocalPlayer.Team) and Color3.new(0,1,0) or Color3.new(1,0,0)
+                else
+                    hrp.Size = Vector3.new(2, 2, 1)
+                    hrp.Transparency = 1
+                end
+
+                -- Original Highlight ESP
+                local existingHighlight = p.Character:FindFirstChild("ApexESP")
+                if _G.ApexConfig.ESP.Active then
+                    if not existingHighlight then
+                        local highlight = Instance.new("Highlight", p.Character)
+                        highlight.Name = "ApexESP"
+                        highlight.FillColor = Color3.fromRGB(0, 255, 0)
+                        highlight.FillTransparency = 0.7
+                        highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
+                    end
+                elseif existingHighlight then
+                    existingHighlight:Destroy()
                 end
             end
         end
     end
 end
 
--- [[ PHYSICS MAGNETISM ]] --
+-- [[ PHYSICS MAGNETISM (UNABRIDGED) ]] --
 workspace.ChildAdded:Connect(function(obj)
     if not _G.ApexConfig.Main.Enabled then return end
-    local name = obj.Name:lower()
-    for _, type in pairs(ProjectileTypes) do
-        if name:find(type) then
-            task.spawn(function()
-                local heart
-                heart = RunService.Heartbeat:Connect(function()
-                    if obj and obj.Parent then
-                        local t = GetTarget()
-                        if t then
-                            local vel = t.AssemblyLinearVelocity * _G.ApexConfig.Combat.Prediction
-                            local p = t.Position + vel
-                            local dir = (p - obj.Position).unit
-                            obj.AssemblyLinearVelocity = dir * 200
-                        else
-                            -- heart:Disconnect() -- Optional: stop when no target
-                        end
-                    else
-                        -- heart:Disconnect()
+    task.wait(0.01)
+    local n = obj.Name:lower()
+    if n:find("jar") or n:find("crystal") or n:find("axe") or n:find("slash") then
+        local heart
+        heart = RunService.Heartbeat:Connect(function()
+            if obj and obj.Parent then
+                local best, dist = nil, _G.ApexConfig.Combat.MagnetRange
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                        if _G.ApexConfig.Main.TeamCheck and player.Team == LocalPlayer.Team then continue end
+                        local mag = (player.Character.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                        if mag < dist then best = player.Character.HumanoidRootPart; dist = mag end
                     end
-                end)
-            end)
-        end
+                end
+                if best then
+                    local p = best.Position + (best.AssemblyLinearVelocity * _G.ApexConfig.Combat.Prediction)
+                    obj.AssemblyLinearVelocity = (p - obj.Position).Unit * 200
+                end
+            else heart:Disconnect() end
+        end)
     end
 end)
 
--- [[ RENDER LOOP ]] --
+-- [[ MAIN RENDER LOOP ]] --
 RunService.RenderStepped:Connect(function()
-    if not _G.ApexConfig.Main.Enabled then return end
-    
-    -- ESP
-    if _G.ApexConfig.ESP.Active then ESP_Update() end
-    
-    -- Hitbox
-    if _G.ApexConfig.Combat.HitboxMult > 0 then Hitbox_Size() end
-    
-    -- Stamina
-    if LocalPlayer.Character then
-        local stam = LocalPlayer.Character:FindFirstChild("Stamina")
-        if stam and stam:IsA("NumberValue") then
-            stam.Value = 100
-        end
-    end
-    
-    -- Auto Attack
-    if _G.ApexConfig.Combat.AutoAttack then
-        local weapon = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-        if weapon then weapon:Activate() end
-    end
-    
-    -- Movement
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local hrp = LocalPlayer.Character.HumanoidRootPart
-        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if hum then
-            -- Speed
-            if _G.ApexConfig.Movement.SpeedMult > 1 then
-                hum.WalkSpeed = 20 * _G.ApexConfig.Movement.SpeedMult
-            end
-            -- Jump
-            if _G.ApexConfig.Movement.JumpForce > 1 then
-                hum.JumpPower = 50 * _G.ApexConfig.Movement.JumpForce
-            end
-            -- Noclip
-            if _G.ApexConfig.Movement.Noclip then
-                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then part.CanCollide = false end
-                end
-            else
-                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then part.CanCollide = true end
-                end
-            end
-        end
+    UpdateVisuals()
+    if _G.ApexConfig.Movement.InfStamina and LocalPlayer.Character then
+        local stam = LocalPlayer.Character:FindFirstChild("Stamina", true)
+        if stam and stam:IsA("NumberValue") then stam.Value = 100 end
     end
 end)
 
--- [[ NOTIFICATION SYSTEM ]] --
-print("_domain expansion: APEX DOMINION INITIALIZED.")
-print("Projectiles will be magnetically guided to closest target.")
-print("Hitbox Multiplier: " .. tostring(_G.ApexConfig.Combat.HitboxMult))
-print("Magnet Range: " .. tostring(_G.ApexConfig.Combat.MagnetRange))
+-- [[ SUKUNA MINIMIZE (IMAGE 2) ]] --
+local SukunaCircle = Instance.new("ImageButton", ScreenGui)
+SukunaCircle.Size = UDim2.new(0, 90, 0, 90)
+SukunaCircle.Position = UDim2.new(0.5, -45, 0.8, 0)
+SukunaCircle.Image = _G.ApexConfig.Assets.MinimizeIcon
+SukunaCircle.Visible = false
+Instance.new("UICorner", SukunaCircle).CornerRadius = UDim.new(1, 0)
+local Stroke = Instance.new("UIStroke", SukunaCircle)
+Stroke.Thickness = 4; Stroke.Color = Color3.new(1,0,0)
 
-return AceUI
+local CloseBtn = Instance.new("TextButton", Main)
+CloseBtn.Size = UDim2.new(0, 35, 0, 35)
+CloseBtn.Position = UDim2.new(0.92, 0, 0.02, 0)
+CloseBtn.Text = "X"
+CloseBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+CloseBtn.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", CloseBtn)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    Main.Visible = false; MainShadow.Visible = false; SukunaCircle.Visible = true
+end)
+SukunaCircle.MouseButton1Click:Connect(function()
+    Main.Visible = true; MainShadow.Visible = true; SukunaCircle.Visible = false
+end)
+
+print("_domain expansion: APEX DOMINION UNABRIDGED LOADED.")
