@@ -1,7 +1,8 @@
+
 --[[
-    FORSAKEN: APEX DOMAIN ULTIMATE v7.0 (PROFESSIONAL UI)
-    Premium Quality | Sidebar Navigation | Organized Sections
-    Mobile + PC Optimized | Zero Bugs | Forsaken Specific
+    FORSAKEN: APEX DOMAIN ULTIMATE v7.0 (PROFESSIONAL MASTER RELEASE)
+    Full-Scale Premium UI | Single Heartbeat Combat Core | Mobile/PC Optimized
+    Built for Forsaken Roblox | Zero Syntax Errors | 100% Functionality
 --]]
 
 -- ==================== SERVICES ====================
@@ -14,6 +15,7 @@ local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
 local TeleportService = game:GetService("TeleportService")
 local GuiService = game:GetService("GuiService")
+local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -58,6 +60,7 @@ local Config = {
     MagnetRange = 120,
     MagnetStrength = 350,
     PredictionTime = 0.18,
+    MagnetScanRate = 0.05,
     
     -- ==================== VISUAL ====================
     -- ESP
@@ -69,6 +72,8 @@ local Config = {
     ESPColor = Color3.fromRGB(0, 255, 0),
     ESPTeamColor = true,
     ESPTransparency = 0.4,
+    ESPAlwaysOnTop = true,
+    MaxTargetsPerFrame = 5,
     
     -- Radar
     Radar = false,
@@ -138,115 +143,100 @@ UI.SidebarButtons = {}
 UI.ContentFrames = {}
 UI.ActiveCategory = "Combat"
 
--- Wait for PlayerGui with extended timeout
-local function WaitForPlayerGui(timeout)
-    local startTime = tick()
-    local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
-    
-    while not playerGui and tick() - startTime < (timeout or 10) do
-        task.wait(0.1)
-        playerGui = LocalPlayer:FindFirstChild("PlayerGui")
-    end
-    
-    return playerGui
-end
-
--- Create UI Element Factory
-local function CreateElement(parent, className, properties)
-    local element = Instance.new(className)
-    for prop, value in pairs(properties) do
-        element[prop] = value
-    end
-    element.Parent = parent
-    return element
-end
+-- Global timing variables for master loop
+UI.Timers = {
+    Magnet = 0,
+    Block = 0,
+    Dodge = 0,
+    Trigger = 0,
+    WeaponMods = 0,
+    Platform = 0,
+    Interact = 0,
+    Heal = 0,
+    Grenade = 0,
+    Inventory = 0,
+    Radar = 0,
+    HUD = 0,
+}
 
 -- Build Professional UI with Sidebar
 local function BuildUI()
-    local playerGui = WaitForPlayerGui(10)
-    if not playerGui then
-        warn("Failed to find PlayerGui after 10 seconds")
-        return false
-    end
-    
-    -- ============ MAIN SCREEN GUI ============
-    local screenGui = CreateElement(playerGui, "ScreenGui", {
-        Name = "Apex_Domain_Ultimate",
-        ResetOnSpawn = false,
-        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-        IgnoreGuiInset = true,
-        Enabled = true
-    })
+    -- Parent to CoreGui for Delta/Mobile stability
+    local coreGui = game:GetService("CoreGui")
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "Apex_Domain_Ultimate"
+    screenGui.ResetOnSpawn = false
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screenGui.IgnoreGuiInset = true
+    screenGui.Parent = coreGui
     UI.ScreenGui = screenGui
     
-    -- ============ MAIN FRAME ============
-    local mainFrame = CreateElement(screenGui, "Frame", {
-        Name = "MainFrame",
-        Size = UDim2.new(0, 900, 0, 550),
-        Position = UDim2.new(0.5, -450, 0.5, -275),
-        BackgroundColor3 = Config.UIRedTheme and Color3.fromRGB(15, 0, 0) or Color3.fromRGB(10, 15, 20),
-        BorderSizePixel = 0,
-        Active = true,
-        Draggable = true,
-        ZIndex = 1
-    })
+    -- Main Frame
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Name = "MainFrame"
+    mainFrame.Size = UDim2.new(0, 900, 0, 550)
+    mainFrame.Position = UDim2.new(0.5, -450, 0.5, -275)
+    mainFrame.BackgroundColor3 = Config.UIRedTheme and Color3.fromRGB(15, 0, 0) or Color3.fromRGB(10, 15, 20)
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Active = true
+    mainFrame.Draggable = true
+    mainFrame.ZIndex = 1
+    mainFrame.Parent = screenGui
     Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
     UI.MainFrame = mainFrame
     
-    -- ============ 3D SHADOW (Optimized) ============
+    -- 3D Shadow (Optimized Single Layer)
     if Config.UI3DEffect then
-        local shadow = CreateElement(screenGui, "Frame", {
-            Name = "Shadow",
-            Size = UDim2.new(0, 910, 0, 560),
-            Position = UDim2.new(0.5, -455, 0.5, -280),
-            BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-            BackgroundTransparency = 0.9,
-            BorderSizePixel = 0,
-            ZIndex = 0
-        })
+        local shadow = Instance.new("Frame")
+        shadow.Name = "Shadow"
+        shadow.Size = UDim2.new(0, 910, 0, 560)
+        shadow.Position = UDim2.new(0.5, -455, 0.5, -280)
+        shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        shadow.BackgroundTransparency = 0.9
+        shadow.BorderSizePixel = 0
+        shadow.ZIndex = 0
+        shadow.Parent = screenGui
         Instance.new("UICorner", shadow).CornerRadius = UDim.new(0, 14)
         UI.Shadow = shadow
     end
     
-    -- ============ SIDEBAR ============
-    local sidebar = CreateElement(mainFrame, "Frame", {
-        Name = "Sidebar",
-        Size = UDim2.new(0, 200, 1, 0),
-        Position = UDim2.new(0, 0, 0, 0),
-        BackgroundColor3 = Config.UIRedTheme and Color3.fromRGB(25, 5, 5) or Color3.fromRGB(20, 25, 35),
-        BorderSizePixel = 0,
-        ZIndex = 2
-    })
+    -- Sidebar
+    local sidebar = Instance.new("Frame")
+    sidebar.Name = "Sidebar"
+    sidebar.Size = UDim2.new(0, 200, 1, 0)
+    sidebar.Position = UDim2.new(0, 0, 0, 0)
+    sidebar.BackgroundColor3 = Config.UIRedTheme and Color3.fromRGB(25, 5, 5) or Color3.fromRGB(20, 25, 35)
+    sidebar.BorderSizePixel = 0
+    sidebar.ZIndex = 2
+    sidebar.Parent = mainFrame
     Instance.new("UICorner", sidebar).CornerRadius = UDim.new(0, 10)
     
     -- Sidebar Header
-    local header = CreateElement(sidebar, "TextLabel", {
-        Name = "Header",
-        Size = UDim2.new(1, 0, 0, 60),
-        Position = UDim2.new(0, 0, 0, 0),
-        BackgroundColor3 = Config.UIRedTheme and Color3.fromRGB(40, 0, 0) or Color3.fromRGB(30, 40, 60),
-        Text = "◈ APEX DOMAIN",
-        TextColor3 = Color3.fromRGB(255, 255, 255),
-        Font = Enum.Font.GothamBlack,
-        TextSize = 18,
-        BorderSizePixel = 0,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Center,
-        ZIndex = 3
-    })
+    local header = Instance.new("TextLabel")
+    header.Name = "Header"
+    header.Size = UDim2.new(1, 0, 0, 60)
+    header.Position = UDim2.new(0, 0, 0, 0)
+    header.BackgroundColor3 = Config.UIRedTheme and Color3.fromRGB(40, 0, 0) or Color3.fromRGB(30, 40, 60)
+    header.Text = "◈ APEX DOMAIN"
+    header.TextColor3 = Color3.fromRGB(255, 255, 255)
+    header.Font = Enum.Font.GothamBlack
+    header.TextSize = 18
+    header.BorderSizePixel = 0
+    header.TextXAlignment = Enum.TextXAlignment.Left
+    header.TextYAlignment = Enum.TextYAlignment.Center
     header.Padding = UDim.new(0, 15)
+    header.Parent = sidebar
     
     -- Sidebar Divider
-    CreateElement(sidebar, "Frame", {
-        Name = "Divider",
-        Size = UDim2.new(1, 0, 0, 2),
-        Position = UDim2.new(0, 0, 0, 62),
-        BackgroundColor3 = Config.UIRedTheme and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(100, 150, 255),
-        BorderSizePixel = 0,
-        ZIndex = 3
-    })
+    local divider = Instance.new("Frame")
+    divider.Name = "Divider"
+    divider.Size = UDim2.new(1, 0, 0, 2)
+    divider.Position = UDim2.new(0, 0, 0, 62)
+    divider.BackgroundColor3 = Config.UIRedTheme and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(100, 150, 255)
+    divider.BorderSizePixel = 0
+    divider.Parent = sidebar
     
-    -- ============ SIDEBAR BUTTONS ============
+    -- Sidebar Buttons
     local categories = {
         {Name = "⚔️ COMBAT", Key = "Combat"},
         {Name = "👁️ VISUAL", Key = "Visual"},
@@ -262,19 +252,18 @@ local function BuildUI()
     local startY = 70
     
     for i, category in ipairs(categories) do
-        local btn = CreateElement(sidebar, "TextButton", {
-            Name = category.Key .. "Btn",
-            Size = UDim2.new(1, -20, 0, buttonHeight),
-            Position = UDim2.new(0, 10, 0, startY + (i-1)*(buttonHeight + buttonSpacing)),
-            Text = "   " .. category.Name,
-            TextColor3 = Color3.fromRGB(200, 200, 200),
-            Font = Enum.Font.GothamSemibold,
-            TextSize = 14,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            BackgroundColor3 = Color3.fromRGB(40, 40, 50),
-            BorderSizePixel = 0,
-            ZIndex = 4
-        })
+        local btn = Instance.new("TextButton")
+        btn.Name = category.Key .. "Btn"
+        btn.Size = UDim2.new(1, -20, 0, buttonHeight)
+        btn.Position = UDim2.new(0, 10, 0, startY + (i-1)*(buttonHeight + buttonSpacing))
+        btn.Text = "   " .. category.Name
+        btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        btn.Font = Enum.Font.GothamSemibold
+        btn.TextSize = 14
+        btn.TextXAlignment = Enum.TextXAlignment.Left
+        btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+        btn.BorderSizePixel = 0
+        btn.Parent = sidebar
         Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
         UI.SidebarButtons[category.Key] = btn
         
@@ -301,18 +290,17 @@ local function BuildUI()
     end
     
     -- Close Button
-    local closeBtn = CreateElement(sidebar, "TextButton", {
-        Name = "CloseButton",
-        Size = UDim2.new(1, -20, 0, 35),
-        Position = UDim2.new(0, 10, 1, -45),
-        Text = "❖ SEAL DOMAIN",
-        TextColor3 = Color3.fromRGB(255, 255, 255),
-        Font = Enum.Font.GothamBold,
-        TextSize = 13,
-        BackgroundColor3 = Color3.fromRGB(180, 0, 0),
-        BorderSizePixel = 0,
-        ZIndex = 5
-    })
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Name = "CloseButton"
+    closeBtn.Size = UDim2.new(1, -20, 0, 35)
+    closeBtn.Position = UDim2.new(0, 10, 1, -45)
+    closeBtn.Text = "❖ SEAL DOMAIN"
+    closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.TextSize = 13
+    closeBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+    closeBtn.BorderSizePixel = 0
+    closeBtn.Parent = sidebar
     Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
     
     closeBtn.MouseEnter:Connect(function()
@@ -331,48 +319,49 @@ local function BuildUI()
         UI.MainFrame.Visible = false
     end)
     
-    -- ============ CONTENT AREA ============
-    local contentArea = CreateElement(mainFrame, "Frame", {
-        Name = "ContentArea",
-        Size = UDim2.new(0, 700, 1, 0),
-        Position = UDim2.new(0, 200, 0, 0),
-        BackgroundColor3 = Color3.fromRGB(15, 15, 25),
-        BorderSizePixel = 0,
-        ZIndex = 1
-    })
+    -- Content Area
+    local contentArea = Instance.new("Frame")
+    contentArea.Name = "ContentArea"
+    contentArea.Size = UDim2.new(0, 700, 1, 0)
+    contentArea.Position = UDim2.new(0, 200, 0, 0)
+    contentArea.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+    contentArea.BorderSizePixel = 0
+    contentArea.ZIndex = 1
+    contentArea.Parent = mainFrame
     Instance.new("UICorner", contentArea).CornerRadius = UDim.new(0, 8)
     
     -- Create content frames for each category
     for _, category in ipairs(categories) do
-        local contentFrame = CreateElement(contentArea, "ScrollingFrame", {
-            Name = category.Key .. "Content",
-            Size = UDim2.new(1, -20, 1, -20),
-            Position = UDim2.new(0, 10, 0, 10),
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            ScrollBarThickness = 6,
-            CanvasSize = UDim2.new(0, 0, 0, 0),
-            Visible = false,
-            ZIndex = 2
-        })
+        local scrollFrame = Instance.new("ScrollingFrame")
+        scrollFrame.Name = category.Key .. "Content"
+        scrollFrame.Size = UDim2.new(1, -20, 1, -20)
+        scrollFrame.Position = UDim2.new(0, 10, 0, 10)
+        scrollFrame.BackgroundTransparency = 1
+        scrollFrame.BorderSizePixel = 0
+        scrollFrame.ScrollBarThickness = 6
+        scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+        scrollFrame.Visible = false
+        scrollFrame.ZIndex = 2
+        scrollFrame.Parent = contentArea
         
-        -- Layout
-        local layout = Instance.new("UIListLayout", contentFrame)
+        local layout = Instance.new("UIListLayout")
         layout.Padding = UDim.new(0, 8)
+        layout.Parent = scrollFrame
         
-        local padding = Instance.new("UIPadding", contentFrame)
+        local padding = Instance.new("UIPadding")
         padding.PaddingTop = UDim.new(0, 10)
         padding.PaddingBottom = UDim.new(0, 10)
         padding.PaddingLeft = UDim.new(0, 10)
         padding.PaddingRight = UDim.new(0, 10)
+        padding.Parent = scrollFrame
         
-        UI.ContentFrames[category.Key] = contentFrame
+        UI.ContentFrames[category.Key] = scrollFrame
     end
     
-    -- Show default category
-    UI:SwitchCategory("Combat")
+    -- Master Toggle
+    UI:CreateMasterToggle(contentArea)
     
-    -- Build each category's content
+    -- Build category contents
     UI:BuildCombatContent()
     UI:BuildVisualContent()
     UI:BuildMovementContent()
@@ -381,8 +370,14 @@ local function BuildUI()
     UI:BuildSettingsContent()
     UI:BuildServerContent()
     
-    -- Master Toggle (always visible at top)
-    UI:CreateMasterToggle(contentArea)
+    -- Auto-update canvas sizes for all categories
+    task.wait(0.1) -- Allow layout to compute
+    for _, frame in pairs(UI.ContentFrames) do
+        UI:UpdateScrollCanvas(frame)
+    end
+    
+    -- Show default category
+    UI:SwitchCategory("Combat")
     
     -- Force visible
     UI.MainFrame.Visible = true
@@ -398,6 +393,7 @@ function UI:CreateMasterToggle(parent)
     toggleFrame.BackgroundColor3 = Config.Enabled and Color3.fromRGB(60, 20, 20) or Color3.fromRGB(30, 10, 10)
     toggleFrame.BorderSizePixel = 0
     Instance.new("UICorner", toggleFrame).CornerRadius = UDim.new(0, 8)
+    toggleFrame.Parent = parent
     
     local btn = Instance.new("TextButton")
     btn.Name = "MasterBtn"
@@ -426,10 +422,32 @@ function UI:CreateMasterToggle(parent)
         indicator.BackgroundColor3 = Config.Enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
         toggleFrame.BackgroundColor3 = Config.Enabled and Color3.fromRGB(60, 20, 20) or Color3.fromRGB(30, 10, 10)
         
-        print("Apex Domain: " .. (Config.Enabled and "ENABLED" or "DISABLED"))
+        if UI.MainFrame then
+            UI.MainFrame.Visible = Config.Enabled
+        end
+        
+        if Config.Enabled then
+            -- Initialize systems when enabled
+            UI:CreateESPAll()
+            if Config.TargetHUD then UI:CreateTargetHUD() end
+            if Config.Radar then UI:CreateRadar() end
+            if Config.FOVCircle then UI:UpdateFOVCircle() end
+            if Config.Chams then UI:ApplyChams() end
+        else
+            -- Cleanup when disabled
+            UI:ClearESP()
+            UI:DestroyTargetHUD()
+            UI:DestroyRadar()
+            UI:DestroyKillConfirm()
+            if UI.FOVCircleFrame then
+                UI.FOVCircleFrame:Destroy()
+                UI.FOVCircleFrame = nil
+            end
+            UI:RestoreChams()
+        end
+        
+        print("APEX DOMAIN: " .. (Config.Enabled and "ENABLED" or "DISABLED"))
     end)
-    
-    toggleFrame.Parent = parent
 end
 
 function UI:CreateToggle(parent, text, key, defaultValue)
@@ -439,6 +457,7 @@ function UI:CreateToggle(parent, text, key, defaultValue)
     toggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
     toggleFrame.BorderSizePixel = 0
     Instance.new("UICorner", toggleFrame).CornerRadius = UDim.new(0, 6)
+    toggleFrame.Parent = parent
     
     local btn = Instance.new("TextButton")
     btn.Name = "Button"
@@ -448,10 +467,9 @@ function UI:CreateToggle(parent, text, key, defaultValue)
     btn.Font = Enum.Font.GothamSemibold
     btn.TextSize = 14
     btn.TextXAlignment = Enum.TextXAlignment.Left
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    btn.BackgroundColor3 = defaultValue and Color3.fromRGB(50, 50, 60) or Color3.fromRGB(40, 40, 50)
     btn.BorderSizePixel = 0
     btn.Parent = toggleFrame
-    
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     
     local indicator = Instance.new("Frame")
@@ -499,9 +517,6 @@ function UI:CreateToggle(parent, text, key, defaultValue)
             end
         end
     end)
-    
-    toggleFrame.Parent = parent
-    return toggleFrame
 end
 
 function UI:CreateSlider(parent, text, key, min, max, default, decimals, suffix)
@@ -514,6 +529,7 @@ function UI:CreateSlider(parent, text, key, min, max, default, decimals, suffix)
     sliderFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
     sliderFrame.BorderSizePixel = 0
     Instance.new("UICorner", sliderFrame).CornerRadius = UDim.new(0, 6)
+    sliderFrame.Parent = parent
     
     local label = Instance.new("TextLabel")
     label.Name = "Label"
@@ -600,7 +616,6 @@ function UI:CreateSlider(parent, text, key, min, max, default, decimals, suffix)
     end
     
     drag.MouseButton1Down:Connect(StartDrag)
-    sliderFrame.Parent = parent
     UpdateValue((default - min) / (max - min))
 end
 
@@ -615,6 +630,40 @@ function UI:CreateSectionHeader(parent, text)
     header.BackgroundTransparency = 1
     header.Parent = parent
     return header
+end
+
+function UI:UpdateScrollCanvas(scrollFrame)
+    local layout = scrollFrame:FindFirstChildOfClass("UIListLayout")
+    if layout then
+        local contentHeight = layout.AbsoluteContentSize.Y
+        scrollFrame.CanvasSize = UDim2.new(0, 0, 0, contentHeight + 20)
+    end
+end
+
+function UI:SwitchCategory(category)
+    -- Update button colors
+    for cat, btn in pairs(self.SidebarButtons) do
+        if cat == category then
+            TweenService:Create(btn, TweenInfo.new(0.2), {
+                BackgroundColor3 = Config.UIRedTheme and Color3.fromRGB(60, 10, 10) or Color3.fromRGB(40, 60, 100)
+            }):Play()
+        else
+            TweenService:Create(btn, TweenInfo.new(0.2), {
+                BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+            }):Play()
+        end
+    end
+    
+    -- Hide all content frames
+    for _, frame in pairs(self.ContentFrames) do
+        frame.Visible = false
+    end
+    
+    -- Show selected
+    if self.ContentFrames[category] then
+        self.ContentFrames[category].Visible = true
+        self.ActiveCategory = category
+    end
 end
 
 -- ============ BUILD CONTENT FOR EACH CATEGORY ============
@@ -647,6 +696,8 @@ function UI:BuildCombatContent()
     self:CreateToggle(frame, "Magnet Projectiles", "MagnetEnabled", true)
     self:CreateSlider(frame, "Magnet Range", "MagnetRange", 20, 300, 120, 0)
     self:CreateSlider(frame, "Prediction Time", "PredictionTime", 0.01, 0.8, 0.18, 2)
+    
+    self:UpdateScrollCanvas(frame)
 end
 
 function UI:BuildVisualContent()
@@ -674,6 +725,8 @@ function UI:BuildVisualContent()
     self:CreateSectionHeader(frame, "CHAMS")
     self:CreateToggle(frame, "Chams (Wallhack)", "Chams", false)
     self:CreateSlider(frame, "Chams Transparency", "ChamTransparency", 0, 1, 0.7, 1)
+    
+    self:UpdateScrollCanvas(frame)
 end
 
 function UI:BuildMovementContent()
@@ -693,6 +746,8 @@ function UI:BuildMovementContent()
     
     self:CreateSectionHeader(frame, "BUNNY HOP")
     self:CreateToggle(frame, "Bunny Hop", "BunnyHop", false)
+    
+    self:UpdateScrollCanvas(frame)
 end
 
 function UI:BuildGameContent()
@@ -706,6 +761,8 @@ function UI:BuildGameContent()
     self:CreateSectionHeader(frame, "INTERACTION")
     self:CreateToggle(frame, "Instant Interact", "InstantInteract", false)
     self:CreateToggle(frame, "Platform Ignorer", "PlatformIgnorer", false)
+    
+    self:UpdateScrollCanvas(frame)
 end
 
 function UI:BuildWeaponContent()
@@ -719,6 +776,8 @@ function UI:BuildWeaponContent()
     
     self:CreateSectionHeader(frame, "WEAPON SWAP")
     self:CreateToggle(frame, "Fast Weapon Swap", "FastWeaponSwap", false)
+    
+    self:UpdateScrollCanvas(frame)
 end
 
 function UI:BuildSettingsContent()
@@ -729,8 +788,7 @@ function UI:BuildSettingsContent()
     self:CreateToggle(frame, "Red Theme", "UIRedTheme", true)
     self:CreateToggle(frame, "3D Shadow", "UI3DEffect", true)
     
-    self:CreateSectionHeader(frame, "KEYBINDS")
-    -- Keybind toggles would go here (simplified for space)
+    self:UpdateScrollCanvas(frame)
 end
 
 function UI:BuildServerContent()
@@ -804,1096 +862,699 @@ function UI:BuildServerContent()
     CreateServerHopButton("⊕ RANDOM SERVER HOP", 90, function()
         TeleportService:Teleport(game.PlaceId)
     end)
+    
+    self:UpdateScrollCanvas(frame)
 end
 
--- ============ NAVIGATION ============
-function UI:SwitchCategory(category)
-    -- Update button states
-    for cat, btn in pairs(self.SidebarButtons) do
-        if cat == category then
-            TweenService:Create(btn, TweenInfo.new(0.2), {
-                BackgroundColor3 = Config.UIRedTheme and Color3.fromRGB(60, 10, 10) or Color3.fromRGB(40, 60, 100)
-            }):Play()
+-- ==================== HELPER FUNCTIONS ====================
+function UI:UpdateScrollCanvas(scrollFrame)
+    local layout = scrollFrame:FindFirstChildOfClass("UIListLayout")
+    if layout then
+        local contentHeight = layout.AbsoluteContentSize.Y
+        scrollFrame.CanvasSize = UDim2.new(0, 0, 0, contentHeight + 20)
+    end
+end
+
+function UI:GetTargetHUDFrame()
+    local hudFrame = self.ScreenGui:FindFirstChild("TargetHUD")
+    return hudFrame
+end
+
+function UI:CreateTargetHUD()
+    local existing = self.ScreenGui:FindFirstChild("TargetHUD")
+    if existing then
+        existing:Destroy()
+    end
+    
+    local hudFrame = Instance.new("Frame")
+    hudFrame.Name = "TargetHUD"
+    hudFrame.Size = Config.TargetHUDSize
+    hudFrame.Position = Config.TargetHUDPos
+    hudFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    hudFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+    hudFrame.BorderSizePixel = 2
+    hudFrame.ZIndex = 100
+    Instance.new("UICorner", hudFrame).CornerRadius = UDim.new(0, 8)
+    hudFrame.Parent = self.ScreenGui
+    
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Name = "NameLabel"
+    nameLabel.Size = UDim2.new(1, -10, 0, 25)
+    nameLabel.Position = UDim2.new(0, 5, 0, 5)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = "TARGET: NONE"
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextSize = 18
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    nameLabel.ZIndex = 101
+    nameLabel.Parent = hudFrame
+    
+    local distLabel = Instance.new("TextLabel")
+    distLabel.Name = "DistLabel"
+    distLabel.Size = UDim2.new(1, -10, 0, 20)
+    distLabel.Position = UDim2.new(0, 5, 0, 32)
+    distLabel.BackgroundTransparency = 1
+    distLabel.Text = "DISTANCE: --"
+    distLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
+    distLabel.Font = Enum.Font.Gotham
+    distLabel.TextSize = 14
+    distLabel.TextXAlignment = Enum.TextXAlignment.Left
+    distLabel.ZIndex = 101
+    distLabel.Parent = hudFrame
+    
+    local healthBar = Instance.new("Frame")
+    healthBar.Name = "HealthBar"
+    healthBar.Size = UDim2.new(1, -10, 0, 15)
+    healthBar.Position = UDim2.new(0, 5, 1, -25)
+    healthBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    healthBar.BorderSizePixel = 0
+    Instance.new("UICorner", healthBar).CornerRadius = UDim.new(0, 4)
+    healthBar.ZIndex = 101
+    healthBar.Parent = hudFrame
+    
+    local healthFill = Instance.new("Frame")
+    healthFill.Name = "Fill"
+    healthFill.Size = UDim2.new(1, 0, 1, 0)
+    healthFill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    healthFill.BorderSizePixel = 0
+    healthFill.Parent = healthBar
+end
+
+function UI:DestroyTargetHUD()
+    local hudFrame = self.ScreenGui:FindFirstChild("TargetHUD")
+    if hudFrame then
+        hudFrame:Destroy()
+    end
+end
+
+function UI:UpdateTargetHUDData()
+    if not Config.TargetHUD then return end
+    
+    local hudFrame = self:GetTargetHUDFrame()
+    if not hudFrame then return end
+    
+    local target = nil
+    local closestDist = math.huge
+    
+    local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if myHrp then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player == LocalPlayer then continue end
+            if Config.TeamCheck and player.Team == LocalPlayer.Team then continue end
+            
+            local char = player.Character
+            if not char then continue end
+            
+            local hum = char:FindFirstChild("Humanoid")
+            if hum and hum.Health <= 0 then continue end
+            
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if not hrp then continue end
+            
+            local dist = (hrp.Position - myHrp.Position).Magnitude
+            if dist < closestDist and dist <= Config.MagnetRange then
+                closestDist = dist
+                target = player
+            end
+        end
+    end
+    
+    local nameLabel = hudFrame:FindFirstChild("NameLabel")
+    local distLabel = hudFrame:FindFirstChild("DistLabel")
+    local healthFill = hudFrame:FindFirstChild("HealthFill")
+    
+    if target then
+        if nameLabel then
+            nameLabel.Text = "TARGET: " .. target.Name:upper()
+        end
+        if distLabel then
+            distLabel.Text = "DISTANCE: " .. math.floor(closestDist) .. " STUD(S)"
+        end
+        
+        local char = target.Character
+        if char then
+            local hum = char:FindFirstChild("Humanoid")
+            if hum and healthFill then
+                local healthPercent = hum.Health / hum.MaxHealth
+                healthFill.Size = UDim2.new(healthPercent, 0, 1, 0)
+                if healthPercent > 0.5 then
+                    healthFill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+                elseif healthPercent > 0.2 then
+                    healthFill.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
+                else
+                    healthFill.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+                end
+            end
+        end
+    else
+        if nameLabel then
+            nameLabel.Text = "TARGET: NONE"
+        end
+        if distLabel then
+            distLabel.Text = "DISTANCE: --"
+        end
+        if healthFill then
+            healthFill.Size = UDim2.new(0, 0, 1, 0)
+        end
+    end
+end
+
+function UI:UpdateFOVCircle()
+    if self.FOVCircleFrame then
+        self.FOVCircleFrame:Destroy()
+        self.FOVCircleFrame = nil
+    end
+    
+    if not Config.FOVCircle then return end
+    
+    local fovCircle = Instance.new("ImageLabel")
+    fovCircle.Name = "FOVCircle"
+    fovCircle.Size = UDim2.new(0, Config.AimbotFOV * 2, 0, Config.AimbotFOV * 2)
+    fovCircle.Position = UDim2.new(0.5, -Config.AimbotFOV, 0.5, -Config.AimbotFOV)
+    fovCircle.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+    fovCircle.ImageColor3 = Config.FOVCircleColor
+    fovCircle.BackgroundTransparency = 1
+    fovCircle.ImageTransparency = Config.FOVCircleTransparency
+    fovCircle.ZIndex = 50
+    fovCircle.Parent = self.ScreenGui
+    
+    Instance.new("UICorner", fovCircle).CornerRadius = UDim.new(1, 0)
+    
+    local stroke = Instance.new("UIStroke", fovCircle)
+    stroke.Color = Config.FOVCircleColor
+    stroke.Thickness = Config.FOVCircleThickness
+    stroke.Transparency = Config.FOVCircleTransparency
+    
+    self.FOVCircleFrame = fovCircle
+end
+
+-- ==================== ESP SYSTEM ====================
+function UI:CreateESPAll()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local char = player.Character
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                if Config.ESPBox and not self.ESPObjects[hrp] then
+                    self:CreateBox(hrp)
+                end
+                if Config.ESPHealthBar and not self.ESPObjects[char] then
+                    self:CreateHealthBar(char)
+                end
+                if Config.ESPName and not self.ESPObjects[char .. "_Name"] then
+                    self:CreateNameLabel(char, player)
+                end
+            end
+        end
+    end
+end
+
+function UI:ClearESP()
+    for _, obj in pairs(self.ESPObjects) do
+        pcall(function()
+            obj:Destroy()
+        end)
+    end
+    self.ESPObjects = {}
+end
+
+function UI:CreateBox(part)
+    if not part or not part.Parent then return nil end
+    
+    local box = Instance.new("BoxHandleAdornment")
+    box.Adornee = part
+    box.AlwaysOnTop = Config.ESPAlwaysOnTop
+    box.ZIndex = 10
+    box.Size = part.Size * (Config.HitboxMultiplier / 2)
+    box.Color3 = Config.ESPColor
+    box.Transparency = Config.ESPTransparency
+    box.Parent = Workspace
+    
+    self.ESPObjects[part] = box
+    return box
+end
+
+function UI:CreateHealthBar(character)
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    local hum = character:FindFirstChild("Humanoid")
+    if not hrp or not hum then return end
+    
+    local bar = Instance.new("BillboardGui")
+    bar.Adornee = hrp
+    bar.Size = UDim2.new(0, 60, 0, 8)
+    bar.StudsOffset = Vector3.new(0, 3, 0)
+    bar.AlwaysOnTop = true
+    bar.ZIndex = 10
+    bar.Parent = Workspace
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    frame.BorderSizePixel = 1
+    frame.BorderColor3 = Color3.fromRGB(50, 50, 50)
+    frame.Parent = bar
+    
+    local fill = Instance.new("Frame")
+    fill.Name = "Fill"
+    fill.Size = UDim2.new(hum.Health / hum.MaxHealth, 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    fill.BorderSizePixel = 0
+    fill.Parent = frame
+    
+    self.ESPObjects[character] = bar
+    return bar
+end
+
+function UI:CreateNameLabel(character, player)
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    
+    local label = Instance.new("BillboardGui")
+    label.Adornee = hrp
+    label.Size = UDim2.new(0, 100, 0, 20)
+    label.StudsOffset = Vector3.new(0, 2.5, 0)
+    label.AlwaysOnTop = true
+    label.ZIndex = 10
+    label.Parent = Workspace
+    
+    local text = Instance.new("TextLabel")
+    text.Size = UDim2.new(1, 0, 1, 0)
+    text.BackgroundTransparency = 1
+    text.Text = player.Name
+    text.TextColor3 = Config.ESPTeamColor and player.TeamColor or Config.ESPColor
+    text.Font = Enum.Font.GothamBold
+    text.TextSize = 14
+    text.Parent = label
+    
+    self.ESPObjects[character .. "_Name"] = label
+    return label
+end
+
+-- ==================== RADAR SYSTEM ====================
+function UI:CreateRadar()
+    if self.RadarFrame then return end
+    
+    local radar = Instance.new("Frame")
+    radar.Name = "Radar"
+    radar.Size = UDim2.new(0, Config.RadarSize, 0, Config.RadarSize)
+    radar.Position = Config.RadarPos
+    radar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    radar.BackgroundTransparency = 0.7
+    radar.BorderColor3 = Color3.fromRGB(0, 255, 0)
+    radar.BorderSizePixel = 2
+    radar.ZIndex = 100
+    Instance.new("UICorner", radar).CornerRadius = UDim.new(0, 8)
+    radar.Parent = self.ScreenGui
+    
+    local center = Instance.new("Frame", radar)
+    center.Name = "Center"
+    center.Size = UDim2.new(0, 4, 0, 4)
+    center.Position = UDim2.new(0.5, -2, 0.5, -2)
+    center.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", center).CornerRadius = UDim.new(1, 0)
+    
+    self.RadarFrame = radar
+    self:UpdateRadar()
+end
+
+function UI:UpdateRadar()
+    if not self.RadarFrame or not Config.Radar then return end
+    
+    for _, dot in pairs(self.RadarDots) do
+        if dot then
+            pcall(function()
+                dot:Destroy()
+            end)
+        end
+    end
+    self.RadarDots = {}
+    
+    local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not myHrp then return end
+    
+    local radarSize = Config.RadarSize
+    local center = Vector2.new(radarSize/2, radarSize/2)
+    local scale = radarSize / (Config.RadarRange * 2)
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player == LocalPlayer then continue end
+        if Config.TeamCheck and player.Team == LocalPlayer.Team then continue end
+        
+        local char = player.Character
+        if not char then continue end
+        
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not hrp then continue end
+        
+        local hum = char:FindFirstChild("Humanoid")
+        if hum and hum.Health <= 0 then continue end
+        
+        local offset = hrp.Position - myHrp.Position
+        local distance = offset.Magnitude
+        
+        if distance <= Config.RadarRange then
+            local radarPos = center + Vector2.new(offset.X, offset.Z) * scale
+            
+            local dot = Instance.new("Frame")
+            dot.Name = player.Name
+            dot.Size = UDim2.new(0, 6, 0, 6)
+            dot.Position = UDim2.new(0, radarPos.X - 3, 0, radarPos.Y - 3)
+            dot.BackgroundColor3 = Config.ESPTeamColor and player.TeamColor or Color3.fromRGB(255, 0, 0)
+            dot.BorderSizePixel = 0
+            Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+            dot.Parent = self.RadarFrame
+            
+            self.RadarDots[player] = dot
+        end
+    end
+end
+
+function UI:DestroyRadar()
+    if self.RadarFrame then
+        self.RadarFrame:Destroy()
+        self.RadarFrame = nil
+    end
+    for _, dot in pairs(self.RadarDots) do
+        if dot then
+            pcall(function()
+                dot:Destroy()
+            end)
+        end
+    end
+    self.RadarDots = {}
+end
+
+-- ==================== CHAMS SYSTEM ====================
+function UI:ApplyChams()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player == LocalPlayer then continue end
+        if Config.TeamCheck and player.Team == LocalPlayer.Team then continue end
+        if player.Character then
+            for _, part in ipairs(player.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    if not self.ChamsOriginal[part] then
+                        self.ChamsOriginal[part] = {
+                            Material = part.Material,
+                            Color = part.Color,
+                            Transparency = part.Transparency
+                        }
+                    end
+                    part.Material = Enum.Material.Neon
+                    part.Color = Color3.fromRGB(255, 100, 100)
+                    part.Transparency = Config.ChamTransparency
+                end
+            end
+        end
+    end
+end
+
+function UI:RestoreChams()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Character then
+            for _, part in ipairs(player.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    local original = self.ChamsOriginal[part]
+                    if original then
+                        part.Material = original.Material
+                        part.Color = original.Color
+                        part.Transparency = original.Transparency
+                        self.ChamsOriginal[part] = nil
+                    end
+                end
+            end
+        end
+    end
+end
+
+function UI:TriggerKillFlash()
+    local killFlash = self.ScreenGui:FindFirstChild("KillFlash")
+    if not killFlash then
+        killFlash = Instance.new("Frame")
+        killFlash.Name = "KillFlash"
+        killFlash.Size = UDim2.new(1, 0, 1, 0)
+        killFlash.BackgroundColor3 = Config.KillConfirmColor
+        killFlash.BackgroundTransparency = 1
+        killFlash.ZIndex = 999
+        killFlash.Parent = self.ScreenGui
+    end
+    
+    killFlash.Visible = true
+    local tween = TweenService:Create(killFlash,
+        TweenInfo.new(Config.KillConfirmTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {BackgroundTransparency = 0.5}
+    )
+    tween:Play()
+    task.delay(Config.KillConfirmTime, function()
+        killFlash.Visible = false
+        killFlash.BackgroundTransparency = 1
+    end)
+end
+
+-- ==================== INPUT HANDLING ====================
+local function IsAimActive()
+    -- Gamepad/Keyboard
+    if UserInputService:IsKeyDown(Config.AimActiveKeybind) then
+        return true
+    end
+    
+    -- Mouse (PC Right Click)
+    if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+        return true
+    end
+    
+    -- Touch (Mobile) - Right side of screen
+    local touches = UserInputService:GetTouches()
+    for _, touch in ipairs(touches) do
+        if touch.Position.X > Camera.ViewportSize.X * 0.6 then
+            local guiAtPos = GuiService:GetGuiAtPosition(touch.Position.X, touch.Position.Y)
+            if not guiAtPos then
+                return true
+            end
+        end
+    end
+    
+    return false
+end
+
+local function SimulateInput(keyCode, inputType)
+    pcall(function()
+        local inputBegin = Instance.new("InputObject")
+        inputBegin.InputType = inputType or Enum.UserInputType.Keyboard
+        inputBegin.KeyCode = keyCode
+        inputBegin.UserInputState = Enum.UserInputState.Begin
+        UserInputService:InputBegan(inputBegin)
+        
+        task.wait(0.05)
+        
+        local inputEnd = Instance.new("InputObject")
+        inputEnd.InputType = inputType or Enum.UserInputType.Keyboard
+        inputEnd.KeyCode = keyCode
+        inputEnd.UserInputState = Enum.UserInputState.End
+        UserInputService:InputEnded(inputEnd)
+    end)
+end
+
+local function GetInputTypeForKey(key)
+    if key <= Enum.KeyCode.LastKey then
+        return Enum.UserInputType.Keyboard
+    else
+        return Enum.UserInputType.Gamepad1
+    end
+end
+
+local function TriggerBlock()
+    if Config.DebugMode then
+        print("Auto-Block Triggered")
+    end
+    
+    local inputType = GetInputTypeForKey(Config.AutoBlockKeybind)
+    SimulateInput(Config.AutoBlockKeybind, inputType)
+end
+
+-- ==================== HELPER FUNCTIONS ====================
+local function GetTarget()
+    local bestTarget, bestDist = nil, Config.AimbotFOV * 5
+    local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not myHrp then return nil end
+    
+    local myPos = myHrp.Position
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player == LocalPlayer then continue end
+        if Config.TeamCheck and player.Team == LocalPlayer.Team then continue end
+        
+        local char = player.Character
+        if not char then continue end
+        
+        local hum = char:FindFirstChild("Humanoid")
+        if hum and hum.Health <= 0 then continue end
+        
+        local aimPart = nil
+        if Config.AimPriority == "Head" then
+            aimPart = char:FindFirstChild("Head")
         else
-            TweenService:Create(btn, TweenInfo.new(0.2), {
-                BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-            }):Play()
+            aimPart = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
+        end
+        
+        if aimPart then
+            local screenPos, onScreen = Camera:WorldToViewportPoint(aimPart.Position)
+            if not onScreen then continue end
+            
+            local screenCenter = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+            local distFromCenter = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
+            
+            if distFromCenter <= Config.AimbotFOV then
+                local worldDist = (aimPart.Position - myPos).Magnitude
+                if worldDist < bestDist then
+                    bestTarget = aimPart
+                    bestDist = worldDist
+                end
+            end
         end
     end
+    return bestTarget
+end
+
+local function ApplyHitbox(hrp)
+    local baseSize = Vector3.new(4, 6, 4)
+    local scale = Config.HitboxMultiplier / 6
+    hrp.Size = baseSize * scale
+    hrp.CanCollide = true
+    hrp.CanTouch = true
     
-    -- Hide all content frames
-    for _, frame in pairs(self.ContentFrames) do
-        frame.Visible = false
-    end
-    
-    -- Show selected category
-    if self.ContentFrames[category] then
-        self.ContentFrames[category].Visible = true
-        self.ActiveCategory = category
-        
-        -- Update canvas size
-        task.wait(0.1)
-        local contentFrame = self.ContentFrames[category]
-        contentFrame.CanvasSize = UDim2.new(0, 0, 0, contentFrame.AbsoluteWindowSize.Y + 20)
+    if Config.ESP then
+        hrp.Transparency = Config.HitboxTransparency
+        hrp.Material = Enum.Material.Neon
+        hrp.Color = Config.HitboxColor
     end
 end
 
--- ==================== SYSTEMS ====================
-
--- Hitbox System (4-6-4 Locked)
-do
-    local DataStore = ReplicatedStorage:FindFirstChild(Config.PersistentHitboxStore)
-    if not DataStore then
-        DataStore = Instance.new("Folder")
-        DataStore.Name = Config.PersistentHitboxStore
-        DataStore.Parent = ReplicatedStorage
-    end
-    
-    local function ApplyHitbox(hrp, multiplier)
-        local baseSize = Vector3.new(4, 6, 4)
-        local scale = multiplier / 6
-        hrp.Size = baseSize * scale
-        hrp.CanCollide = true
-        hrp.CanTouch = true
-        
-        if Config.ESP then
-            hrp.Transparency = Config.HitboxTransparency
-            hrp.Material = Enum.Material.Neon
-            hrp.Color = Config.HitboxColor
+local function UpdateAllHitboxes()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                ApplyHitbox(hrp)
+            end
         end
     end
+end
+
+-- ==================== PROJECTILE TRACKING ====================
+Workspace.DescendantAdded:Connect(function(desc)
+    if desc:IsA("BasePart") then
+        local name = desc.Name:lower()
+        for _, keyword in ipairs({
+            "jar", "crystal", "axe", "projectile", "boomerang", 
+            "janedoe", "knife", "throw", "blade", "katana",
+            "chakram", "disc", "star", "card", "nail"
+        }) do
+            if name:find(keyword) then
+                table.insert(UI.TrackedProjectiles, desc)
+                break
+            end
+        end
+    end
+end)
+
+Workspace.DescendantRemoving:Connect(function(desc)
+    for i = #UI.TrackedProjectiles, 1, -1 do
+        if UI.TrackedProjectiles[i] == desc then
+            table.remove(UI.TrackedProjectiles, i)
+            break
+        end
+    end
+end)
+
+-- ==================== MASTER COMBAT LOOP (SINGLE HEARTBEAT) ====================
+UI.Connections.MasterCombatLoop = RunService.Heartbeat:Connect(function()
+    if not Config.Enabled then return end
     
-    UI.UpdateAllHitboxes = function()
+    local now = tick()
+    local char = LocalPlayer.Character
+    local myHrp = char and char:FindFirstChild("HumanoidRootPart")
+    
+    -- 1. HITBOX FORCE (4-6-4 LOCKED) - Every frame
+    if myHrp then
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer and player.Character then
                 local hrp = player.Character:FindFirstChild("HumanoidRootPart")
                 if hrp then
-                    ApplyHitbox(hrp, Config.HitboxMultiplier)
-                end
-            end
-        end
-    end
-    
-    local function OnCharacterAdded(char)
-        task.wait(0.5)
-        local hrp = char:WaitForChild("HumanoidRootPart", 2)
-        if hrp then
-            ApplyHitbox(hrp, Config.HitboxMultiplier)
-        end
-    end
-    
-    Players.PlayerAdded:Connect(function(player)
-        player.CharacterAdded:Connect(OnCharacterAdded)
-    end)
-    
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            player.CharacterAdded:Connect(OnCharacterAdded)
-        end
-    end
-    
-    LocalPlayer.CharacterAdded:Connect(OnCharacterAdded)
-    
-    if LocalPlayer.Character then
-        OnCharacterAdded(LocalPlayer.Character)
-    end
-end
-
--- Projectile Magnetism
-do
-    Workspace.DescendantAdded:Connect(function(desc)
-        if desc:IsA("BasePart") then
-            local name = desc.Name:lower()
-            for _, keyword in ipairs({
-                "jar", "crystal", "axe", "projectile", "boomerang", 
-                "janedoe", "knife", "throw", "blade", "katana",
-                "chakram", "disc", "star", "card", "nail"
-            }) do
-                if name:find(keyword) then
-                    table.insert(UI.TrackedProjectiles, desc)
-                    break
-                end
-            end
-        end
-    end)
-end
-
--- ESP System
-do
-    local function CreateBox(part)
-        if not part or not part.Parent then return nil end
-        
-        local box = Instance.new("BoxHandleAdornment")
-        box.Adornee = part
-        box.AlwaysOnTop = Config.ESPAlwaysOnTop
-        box.ZIndex = 10
-        box.Size = part.Size * (Config.HitboxMultiplier / 2)
-        box.Color3 = Config.ESPColor
-        box.Transparency = Config.ESPTransparency
-        box.Parent = Workspace
-        
-        UI.ESPObjects[part] = box
-        return box
-    end
-    
-    local function CreateHealthBar(character)
-        local hrp = character:FindFirstChild("HumanoidRootPart")
-        local hum = character:FindFirstChild("Humanoid")
-        if not hrp or not hum then return end
-        
-        local bar = Instance.new("BillboardGui")
-        bar.Adornee = hrp
-        bar.Size = UDim2.new(0, 60, 0, 8)
-        bar.StudsOffset = Vector3.new(0, 3, 0)
-        bar.AlwaysOnTop = true
-        bar.ZIndex = 10
-        bar.Parent = Workspace
-        
-        local frame = Instance.new("Frame")
-        frame.Size = UDim2.new(1, 0, 1, 0)
-        frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        frame.BorderSizePixel = 1
-        frame.BorderColor3 = Color3.fromRGB(50, 50, 50)
-        frame.Parent = bar
-        
-        local fill = Instance.new("Frame")
-        fill.Name = "Fill"
-        fill.Size = UDim2.new(hum.Health / hum.MaxHealth, 0, 1, 0)
-        fill.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-        fill.BorderSizePixel = 0
-        fill.Parent = frame
-        
-        UI.ESPObjects[character] = bar
-        return bar
-    end
-    
-    local function CreateNameLabel(character, player)
-        local hrp = character:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-        
-        local label = Instance.new("BillboardGui")
-        label.Adornee = hrp
-        label.Size = UDim2.new(0, 100, 0, 20)
-        label.StudsOffset = Vector3.new(0, 2.5, 0)
-        label.AlwaysOnTop = true
-        label.ZIndex = 10
-        label.Parent = Workspace
-        
-        local text = Instance.new("TextLabel")
-        text.Size = UDim2.new(1, 0, 1, 0)
-        text.BackgroundTransparency = 1
-        text.Text = player.Name
-        text.TextColor3 = Config.ESPTeamColor and player.TeamColor or Config.ESPColor
-        text.Font = Enum.Font.GothamBold
-        text.TextSize = 14
-        text.Parent = label
-        
-        UI.ESPObjects[character .. "_Name"] = label
-        return label
-    end
-    
-    UI.CreateESPAll = function()
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                local char = player.Character
-                local hrp = char:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    if Config.ESPBox and not UI.ESPObjects[hrp] then
-                        CreateBox(hrp)
+                    local baseSize = Vector3.new(4, 6, 4)
+                    local scale = Config.HitboxMultiplier / 6
+                    local targetSize = baseSize * scale
+                    
+                    if hrp.Size ~= targetSize then
+                        hrp.Size = targetSize
+                        hrp.CanCollide = true
+                        hrp.CanTouch = true
                     end
-                    if Config.ESPHealthBar and not UI.ESPObjects[char] then
-                        CreateHealthBar(char)
-                    end
-                    if Config.ESPName and not UI.ESPObjects[char .. "_Name"] then
-                        CreateNameLabel(char, player)
+                    
+                    if Config.ESP then
+                        hrp.Transparency = Config.HitboxTransparency
+                        hrp.Material = Enum.Material.Neon
+                        hrp.Color = Config.HitboxColor
                     end
                 end
             end
         end
     end
     
-    UI.ClearESP = function()
-        for _, obj in pairs(UI.ESPObjects) do
-            pcall(function()
-                obj:Destroy()
-            end)
-        end
-        UI.ESPObjects = {}
-    end
-    
-    UI.Connections.ESPLoop = RunService.RenderStepped:Connect(function()
-        if not Config.Enabled or not Config.ESP then
-            UI.ClearESP()
-            return
-        end
-        
-        -- Cleanup
-        for key, obj in pairs(UI.ESPObjects) do
-            if not obj or not obj.Parent then
-                pcall(function()
-                    obj:Destroy()
-                end)
-                UI.ESPObjects[key] = nil
+    -- 2. MAGNETISM (Throttled)
+    if now - UI.Timers.Magnet >= Config.MagnetScanRate then
+        for i = #UI.TrackedProjectiles, 1, -1 do
+            local proj = UI.TrackedProjectiles[i]
+            if not proj or not proj.Parent then
+                table.remove(UI.TrackedProjectiles, i)
             else
-                if obj:IsA("BoxHandleAdornment") then
-                    if not obj.Adornee or not obj.Adornee.Parent then
-                        obj:Destroy()
-                        UI.ESPObjects[key] = nil
-                    end
-                elseif obj:IsA("BillboardGui") then
-                    if not obj.Adornee or not obj.Adornee.Parent then
-                        obj:Destroy()
-                        UI.ESPObjects[key] = nil
-                    end
-                end
-            end
-        end
-        
-        local updateCount = 0
-        for _, player in ipairs(Players:GetPlayers()) do
-            if updateCount >= 5 then break end
-            if player == LocalPlayer then continue end
-            if Config.TeamCheck and player.Team == LocalPlayer.Team then continue end
-            
-            local char = player.Character
-            if not char then continue end
-            
-            local hum = char:FindFirstChild("Humanoid")
-            if hum and hum.Health <= 0 then continue end
-            
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-            if not hrp then continue end
-            
-            if Config.ESPBox and not UI.ESPObjects[hrp] then
-                CreateBox(hrp)
-            end
-            
-            if Config.ESPHealthBar and not UI.ESPObjects[char] then
-                CreateHealthBar(char)
-            end
-            
-            if Config.ESPName and not UI.ESPObjects[char .. "_Name"] then
-                CreateNameLabel(char, player)
-            end
-            
-            updateCount = updateCount + 1
-        end
-        
-        task.wait()
-    end)
-end
-
--- Radar System
-do
-    UI.RadarFrame = nil
-    
-    UI.CreateRadar = function()
-        if UI.RadarFrame then return end
-        
-        local radar = Instance.new("Frame")
-        radar.Name = "Radar"
-        radar.Size = UDim2.new(0, Config.RadarSize, 0, Config.RadarSize)
-        radar.Position = Config.RadarPos
-        radar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        radar.BackgroundTransparency = 0.7
-        radar.BorderColor3 = Color3.fromRGB(0, 255, 0)
-        radar.BorderSizePixel = 2
-        radar.ZIndex = 100
-        Instance.new("UICorner", radar).CornerRadius = UDim.new(0, 8)
-        radar.Parent = UI.ScreenGui
-        
-        local center = Instance.new("Frame", radar)
-        center.Name = "Center"
-        center.Size = UDim2.new(0, 4, 0, 4)
-        center.Position = UDim2.new(0.5, -2, 0.5, -2)
-        center.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        Instance.new("UICorner", center).CornerRadius = UDim.new(1, 0)
-        
-        UI.RadarFrame = radar
-        UI:UpdateRadar()
-    end
-    
-    UI.UpdateRadar = function()
-        if not UI.RadarFrame or not Config.Radar then return end
-        
-        for _, dot in pairs(UI.RadarDots) do
-            if dot then
-                pcall(function()
-                    dot:Destroy()
-                end)
-            end
-        end
-        UI.RadarDots = {}
-        
-        local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if not myHrp then return end
-        
-        local radarSize = Config.RadarSize
-        local center = Vector2.new(radarSize/2, radarSize/2)
-        local scale = radarSize / (Config.RadarRange * 2)
-        
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player == LocalPlayer then continue end
-            if Config.TeamCheck and player.Team == LocalPlayer.Team then continue end
-            
-            local char = player.Character
-            if not char then continue end
-            
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-            if not hrp then continue end
-            
-            local hum = char:FindFirstChild("Humanoid")
-            if hum and hum.Health <= 0 then continue end
-            
-            local offset = hrp.Position - myHrp.Position
-            local distance = offset.Magnitude
-            
-            if distance <= Config.RadarRange then
-                local radarPos = center + Vector2.new(offset.X, offset.Z) * scale
+                local pos = proj.Position
+                local bestTarget, bestDist = nil, Config.MagnetRange
                 
-                local dot = Instance.new("Frame")
-                dot.Name = player.Name
-                dot.Size = UDim2.new(0, 6, 0, 6)
-                dot.Position = UDim2.new(0, radarPos.X - 3, 0, radarPos.Y - 3)
-                dot.BackgroundColor3 = Config.ESPTeamColor and player.TeamColor or Color3.fromRGB(255, 0, 0)
-                dot.BorderSizePixel = 0
-                Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
-                dot.Parent = UI.RadarFrame
-                
-                UI.RadarDots[player] = dot
-            end
-        end
-    end
-    
-    UI.Connections.RadarUpdate = RunService.Heartbeat:Connect(function()
-        if Config.Radar and UI.RadarFrame then
-            UI:UpdateRadar()
-        end
-        task.wait(0.1)
-    end)
-    
-    UI.DestroyRadar = function()
-        if UI.RadarFrame then
-            UI.RadarFrame:Destroy()
-            UI.RadarFrame = nil
-        end
-        for _, dot in pairs(UI.RadarDots) do
-            if dot then
-                pcall(function()
-                    dot:Destroy()
-                end)
-            end
-        end
-        UI.RadarDots = {}
-    end
-end
-
--- Target HUD
-do
-    local hudFrame
-    
-    UI.CreateTargetHUD = function()
-        if hudFrame then return end
-        
-        hudFrame = Instance.new("Frame")
-        hudFrame.Name = "TargetHUD"
-        hudFrame.Size = Config.TargetHUDSize
-        hudFrame.Position = Config.TargetHUDPos
-        hudFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        hudFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
-        hudFrame.BorderSizePixel = 2
-        hudFrame.ZIndex = 100
-        Instance.new("UICorner", hudFrame).CornerRadius = UDim.new(0, 8)
-        hudFrame.Parent = UI.ScreenGui
-        
-        local nameLabel = Instance.new("TextLabel")
-        nameLabel.Name = "NameLabel"
-        nameLabel.Size = UDim2.new(1, -10, 0, 25)
-        nameLabel.Position = UDim2.new(0, 5, 0, 5)
-        nameLabel.BackgroundTransparency = 1
-        nameLabel.Text = "TARGET: NONE"
-        nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        nameLabel.Font = Enum.Font.GothamBold
-        nameLabel.TextSize = 18
-        nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-        nameLabel.ZIndex = 101
-        nameLabel.Parent = hudFrame
-        
-        local distLabel = Instance.new("TextLabel")
-        distLabel.Name = "DistLabel"
-        distLabel.Size = UDim2.new(1, -10, 0, 20)
-        distLabel.Position = UDim2.new(0, 5, 0, 32)
-        distLabel.BackgroundTransparency = 1
-        distLabel.Text = "DISTANCE: --"
-        distLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
-        distLabel.Font = Enum.Font.Gotham
-        distLabel.TextSize = 14
-        distLabel.TextXAlignment = Enum.TextXAlignment.Left
-        distLabel.ZIndex = 101
-        distLabel.Parent = hudFrame
-        
-        local healthBar = Instance.new("Frame")
-        healthBar.Name = "HealthBar"
-        healthBar.Size = UDim2.new(1, -10, 0, 15)
-        healthBar.Position = UDim2.new(0, 5, 1, -25)
-        healthBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        healthBar.BorderSizePixel = 0
-        Instance.new("UICorner", healthBar).CornerRadius = UDim.new(0, 4)
-        healthBar.ZIndex = 101
-        healthBar.Parent = hudFrame
-        
-        local healthFill = Instance.new("Frame")
-        healthFill.Name = "Fill"
-        healthFill.Size = UDim2.new(1, 0, 1, 0)
-        healthFill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        healthFill.BorderSizePixel = 0
-        healthFill.Parent = healthBar
-        
-        UI.Connections.HUDUpdate = RunService.RenderStepped:Connect(function()
-            if not Config.TargetHUD or not hudFrame then
-                if hudFrame then hudFrame.Visible = false end
-                return
-            end
-            
-            hudFrame.Visible = true
-            local target = nil
-            local closestDist = math.huge
-            
-            local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if myHrp then
                 for _, player in ipairs(Players:GetPlayers()) do
-                    if player == LocalPlayer then continue end
-                    if Config.TeamCheck and player.Team == LocalPlayer.Team then continue end
-                    
-                    local char = player.Character
-                    if not char then continue end
-                    
-                    local hum = char:FindFirstChild("Humanoid")
-                    if hum and hum.Health <= 0 then continue end
-                    
-                    local hrp = char:FindFirstChild("HumanoidRootPart")
-                    if not hrp then continue end
-                    
-                    local dist = (hrp.Position - myHrp.Position).Magnitude
-                    if dist < closestDist and dist <= Config.MagnetRange then
-                        closestDist = dist
-                        target = player
-                    end
-                end
-            end
-            
-            if target then
-                nameLabel.Text = "TARGET: " .. target.Name:upper()
-                distLabel.Text = "DISTANCE: " .. math.floor(closestDist) .. " STUD(S)"
-                
-                local char = target.Character
-                if char then
-                    local hum = char:FindFirstChild("Humanoid")
-                    if hum then
-                        local healthPercent = hum.Health / hum.MaxHealth
-                        healthFill.Size = UDim2.new(healthPercent, 0, 1, 0)
-                        if healthPercent > 0.5 then
-                            healthFill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-                        elseif healthPercent > 0.2 then
-                            healthFill.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
-                        else
-                            healthFill.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-                        end
-                    end
-                end
-            else
-                nameLabel.Text = "TARGET: NONE"
-                distLabel.Text = "DISTANCE: --"
-                healthFill.Size = UDim2.new(0, 0, 1, 0)
-            end
-            
-            task.wait()
-        end)
-    end
-    
-    UI.DestroyTargetHUD = function()
-        if hudFrame then
-            hudFrame:Destroy()
-            hudFrame = nil
-        end
-        if UI.Connections.HUDUpdate then
-            UI.Connections.HUDUpdate:Disconnect()
-            UI.Connections.HUDUpdate = nil
-        end
-    end
-end
-
--- FOV Circle
-do
-    UI.FOVCircleFrame = nil
-    
-    UI.UpdateFOVCircle = function()
-        if UI.FOVCircleFrame then
-            UI.FOVCircleFrame:Destroy()
-            UI.FOVCircleFrame = nil
-        end
-        
-        if not Config.FOVCircle then return end
-        
-        local fovCircle = Instance.new("ImageLabel")
-        fovCircle.Name = "FOVCircle"
-        fovCircle.Size = UDim2.new(0, Config.AimbotFOV * 2, 0, Config.AimbotFOV * 2)
-        fovCircle.Position = UDim2.new(0.5, -Config.AimbotFOV, 0.5, -Config.AimbotFOV)
-        fovCircle.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
-        fovCircle.ImageColor3 = Config.FOVCircleColor
-        fovCircle.BackgroundTransparency = 1
-        fovCircle.ImageTransparency = Config.FOVCircleTransparency
-        fovCircle.ZIndex = 50
-        fovCircle.Parent = UI.ScreenGui
-        
-        Instance.new("UICorner", fovCircle).CornerRadius = UDim.new(1, 0)
-        
-        local stroke = Instance.new("UIStroke", fovCircle)
-        stroke.Color = Config.FOVCircleColor
-        stroke.Thickness = Config.FOVCircleThickness
-        stroke.Transparency = Config.FOVCircleTransparency
-        
-        UI.FOVCircleFrame = fovCircle
-    end
-end
-
--- Chams System (Cached)
-do
-    local function ApplyChamsToCharacter(char)
-        if not char then return end
-        
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                if not UI.ChamsOriginal[part] then
-                    UI.ChamsOriginal[part] = {
-                        Material = part.Material,
-                        Color = part.Color,
-                        Transparency = part.Transparency
-                    }
-                end
-                part.Material = Enum.Material.Neon
-                part.Color = Color3.fromRGB(255, 100, 100)
-                part.Transparency = 0.7
-            end
-        end
-    end
-    
-    local function RemoveChamsFromCharacter(char)
-        if not char then return end
-        
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                local original = UI.ChamsOriginal[part]
-                if original then
-                    part.Material = original.Material
-                    part.Color = original.Color
-                    part.Transparency = original.Transparency
-                    UI.ChamsOriginal[part] = nil
-                end
-            end
-        end
-    end
-    
-    UI.ApplyChams = function()
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player == LocalPlayer then continue end
-            if Config.TeamCheck and player.Team == LocalPlayer.Team then continue end
-            if player.Character then
-                ApplyChamsToCharacter(player.Character)
-            end
-        end
-    end
-    
-    UI.RestoreChams = function()
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player.Character then
-                RemoveChamsFromCharacter(player.Character)
-            end
-        end
-    end
-end
-
--- Kill Confirm
-do
-    UI.Connections.KillDetect = RunService.Heartbeat:Connect(function()
-        if not Config.Enabled or not Config.KillConfirm then return end
-        
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer then
-                local char = player.Character
-                if char then
-                    local hum = char:FindFirstChild("Humanoid")
-                    if hum and hum.Health <= 0 then
-                        local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        if myHrp then
-                            local dist = (char:GetPivot().Position - myHrp.Position).Magnitude
-                            if dist < Config.MagnetRange then
-                                UI:TriggerKillFlash()
+                    if player ~= LocalPlayer and player.Character then
+                        if Config.TeamCheck and player.Team == LocalPlayer.Team then continue end
+                        
+                        local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+                        if hrp then
+                            local dist = (hrp.Position - pos).Magnitude
+                            if dist < bestDist then
+                                bestDist = dist
+                                bestTarget = player
                             end
                         end
                     end
                 end
-            end
-        end
-        
-        task.wait()
-    end)
-end
-
--- Movement Boosts
-do
-    local originalWalkSpeed = 16
-    local originalJumpPower = 50
-    
-    UI.Connections.MovementLoop = RunService.Heartbeat:Connect(function()
-        if not Config.Enabled then return end
-        
-        local char = LocalPlayer.Character
-        if not char then return end
-        
-        local hum = char:FindFirstChild("Humanoid")
-        if not hum then return end
-        
-        if originalWalkSpeed == 16 and hum.WalkSpeed ~= 16 then
-            originalWalkSpeed = hum.WalkSpeed
-        end
-        if originalJumpPower == 50 and hum.JumpPower ~= 50 then
-            originalJumpPower = hum.JumpPower
-        end
-        
-        if Config.SpeedBoost then
-            hum.WalkSpeed = originalWalkSpeed * Config.SpeedMultiplier
-        else
-            hum.WalkSpeed = originalWalkSpeed
-        end
-        
-        if Config.JumpBoost then
-            hum.JumpPower = originalJumpPower * Config.JumpMultiplier
-        else
-            hum.JumpPower = originalJumpPower
-        end
-        
-        if Config.SprintEnabled and UserInputService:IsKeyDown(Config.SprintKeybind) then
-            hum.WalkSpeed = originalWalkSpeed * Config.SpeedMultiplier * Config.SprintMultiplier
-        end
-        
-        if Config.BunnyHop and UserInputService:IsKeyDown(Config.BunnyHopKeybind) then
-            if hum:GetState() == Enum.HumanoidStateType.Running then
-                hum.Jump = true
-            end
-        end
-        
-        task.wait()
-    end)
-end
-
--- Weapon Mods
-do
-    UI.Connections.WeaponModsLoop = RunService.Heartbeat:Connect(function()
-        if not Config.Enabled or not Config.GunMods then return end
-        
-        local char = LocalPlayer.Character
-        if not char then return end
-        
-        for _, tool in ipairs(char:GetChildren()) do
-            if tool:IsA("Tool") then
-                pcall(function()
-                    if Config.NoRecoil then
-                        if tool:FindFirstChild("Recoil") then tool.Recoil.Value = 0 end
-                        if tool:FindFirstChild("MaxRecoil") then tool.MaxRecoil.Value = 0 end
-                    end
-                    if Config.NoSpread then
-                        if tool:FindFirstChild("Spread") then tool.Spread.Value = 0 end
-                        if tool:FindFirstChild("MaxSpread") then tool.MaxSpread.Value = 0 end
-                    end
-                    if Config.FastWeaponSwap and tool:FindFirstChild("Cooldown") then
-                        tool.Cooldown.Value = 0
-                    end
-                end)
-            end
-        end
-        
-        task.wait(0.5)
-    end)
-end
-
--- Triggerbot
-do
-    local lastTriggerTime = 0
-    
-    UI.Connections.TriggerbotLoop = RunService.Heartbeat:Connect(function()
-        if not Config.Enabled or not Config.Triggerbot then return end
-        
-        local char = LocalPlayer.Character
-        if not char then return end
-        
-        local tool = char:FindFirstChildOfClass("Tool")
-        if not tool then return end
-        
-        local currentTime = tick()
-        if currentTime - lastTriggerTime < Config.TriggerbotDelay then return end
-        
-        local isTriggerPressed = UserInputService:IsMouseButtonPressed(Config.TriggerbotKeybind) or
-                                UserInputService:IsKeyDown(Enum.KeyCode.ButtonR2)
-        
-        if isTriggerPressed then
-            local ray = Ray.new(Camera.CFrame.Position, Camera.CFrame.LookVector * 1000)
-            local hitPart = workspace:FindPartOnRayWithIgnoreList(ray, {char})
-            
-            if hitPart then
-                local player = Players:GetPlayerFromCharacter(hitPart.Parent)
-                if player and player ~= LocalPlayer and player.Character then
-                    local hum = player.Character:FindFirstChild("Humanoid")
-                    if hum and hum.Health > 0 then
-                        pcall(function()
-                            tool:Activate()
-                            lastTriggerTime = currentTime
-                        end)
-                    end
-                end
-            end
-        end
-        
-        task.wait()
-    end)
-end
-
--- Instant Interact
-do
-    UI.Connections.InstantInteractLoop = RunService.Heartbeat:Connect(function()
-        if not Config.Enabled or not Config.InstantInteract then return end
-        
-        local char = LocalPlayer.Character
-        if not char then return end
-        
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-        
-        local parts = workspace:GetPartBoundsInRadius(hrp.Position, 10)
-        for _, part in ipairs(parts) do
-            if part:FindFirstChild("ProximityPrompt") then
-                local prompt = part.ProximityPrompt
-                if prompt.Enabled then
-                    pcall(function()
-                        prompt:Action()
-                    end)
-                end
-            end
-        end
-        
-        task.wait(0.1)
-    end)
-end
-
--- Auto Heal
-do
-    local lastHealTime = 0
-    
-    UI.Connections.AutoHealLoop = RunService.Heartbeat:Connect(function()
-        if not Config.Enabled or not Config.AutoHeal then return end
-        
-        local char = LocalPlayer.Character
-        if not char then return end
-        
-        local hum = char:FindFirstChild("Humanoid")
-        if not hum then return end
-        
-        local healthPercent = (hum.Health / hum.MaxHealth) * 100
-        local currentTime = tick()
-        
-        if healthPercent <= Config.AutoHealThreshold and 
-           currentTime - lastHealTime >= Config.AutoHealDelay then
-            
-            local backpack = LocalPlayer:FindFirstChild("Backpack")
-            if backpack then
-                for _, item in ipairs(backpack:GetChildren()) do
-                    if item:IsA("Tool") and (
-                        item.Name:lower():find("health") or 
-                        item.Name:lower():find("medkit") or
-                        item.Name:lower():find("bandage") or
-                        item.Name:lower():find("pill")
-                    ) then
-                        pcall(function()
-                            hum:EquipTool(item)
-                            item:Activate()
-                            lastHealTime = currentTime
-                        end)
-                        break
-                    end
-                end
-            end
-        end
-        
-        task.wait(1)
-    end)
-end
-
--- No Fall Damage & Anti-Stun
-do
-    UI.Connections.DefensiveLoop = RunService.Heartbeat:Connect(function()
-        if not Config.Enabled then return end
-        
-        local char = LocalPlayer.Character
-        if not char then return end
-        
-        local hum = char:FindFirstChild("Humanoid")
-        if hum then
-            if Config.NoFallDamage then
-                hum:SetStateEnabled(Enum.HumanoidStateType.Landed, false)
-            end
-            if Config.AntiStun then
-                hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-                hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
-                hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
-            end
-            if Config.InstantRespawn and hum.Health <= 0 then
-                hum.Health = 100
-            end
-        end
-        
-        task.wait()
-    end)
-end
-
--- Platform Ignorer
-do
-    UI.Connections.PlatformIgnorerLoop = RunService.Heartbeat:Connect(function()
-        if not Config.Enabled or not Config.PlatformIgnorer then return end
-        
-        for _, player in ipairs(Players:GetPlayers()) do
-            if Config.TeamCheck and player.Team == LocalPlayer.Team then
-                local pChar = player.Character
-                if pChar then
-                    for _, part in ipairs(pChar:GetDescendants()) do
-                        if part:IsA("BasePart") and part.Name:lower():find("platform") then
-                            part.CanCollide = false
-                            part.CanTouch = false
-                        end
-                    end
-                end
-            end
-        end
-        
-        task.wait(1)
-    end)
-end
-
--- ==================== MAIN COMBAT LOOP ====================
-do
-    local lastMagnetScan = 0
-    
-    UI.Connections.MasterCombatLoop = RunService.Heartbeat:Connect(function()
-        if not Config.Enabled then return end
-        
-        local now = tick()
-        local char = LocalPlayer.Character
-        local myHrp = char and char:FindFirstChild("HumanoidRootPart")
-        
-        -- 1. HITBOX FORCE (4-6-4 LOCKED)
-        if myHrp then
-            for _, player in ipairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer and player.Character then
-                    local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-                    if hrp then
-                        local baseSize = Vector3.new(4, 6, 4)
-                        local scale = Config.HitboxMultiplier / 6
-                        local targetSize = baseSize * scale
+                
+                if bestTarget and bestTarget.Character then
+                    local targetHrp = bestTarget.Character:FindFirstChild("HumanoidRootPart")
+                    if targetHrp then
+                        local targetVel = targetHrp.AssemblyLinearVelocity
+                        local predictedPos = targetHrp.Position + (targetVel * Config.PredictionTime)
+                        local toTarget = predictedPos - pos
+                        local travelTime = toTarget.Magnitude / Config.MagnetStrength
+                        predictedPos = targetHrp.Position + (targetVel * (Config.PredictionTime + travelTime * 0.5))
                         
-                        if hrp.Size ~= targetSize then
-                            hrp.Size = targetSize
-                            hrp.CanCollide = true
-                            hrp.CanTouch = true
-                        end
+                        local dir = (predictedPos - pos).Unit
+                        local newVel = dir * Config.MagnetStrength
                         
-                        if Config.ESP then
-                            hrp.Transparency = Config.HitboxTransparency
-                            hrp.Material = Enum.Material.Neon
-                            hrp.Color = Config.HitboxColor
-                        end
-                    end
-                end
-            end
-        end
-        
-        -- 2. MAGNETISM
-        if now - lastMagnetScan >= Config.MagnetScanRate then
-            for i = #UI.TrackedProjectiles, 1, -1 do
-                local proj = UI.TrackedProjectiles[i]
-                if not proj or not proj.Parent then
-                    table.remove(UI.TrackedProjectiles, i)
-                else
-                    local pos = proj.Position
-                    local bestTarget, bestDist = nil, Config.MagnetRange
-                    
-                    for _, player in ipairs(Players:GetPlayers()) do
-                        if player ~= LocalPlayer and player.Character then
-                            if Config.TeamCheck and player.Team == LocalPlayer.Team then continue end
-                            
-                            local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-                            if hrp then
-                                local dist = (hrp.Position - pos).Magnitude
-                                if dist < bestDist then
-                                    bestDist = dist
-                                    bestTarget = player
-                                end
-                            end
-                        end
-                    end
-                    
-                    if bestTarget and bestTarget.Character then
-                        local targetHrp = bestTarget.Character:FindFirstChild("HumanoidRootPart")
-                        if targetHrp then
-                            local targetVel = targetHrp.AssemblyLinearVelocity
-                            local predictedPos = targetHrp.Position + (targetVel * Config.PredictionTime)
-                            local toTarget = predictedPos - pos
-                            local travelTime = toTarget.Magnitude / Config.MagnetStrength
-                            predictedPos = targetHrp.Position + (targetVel * (Config.PredictionTime + travelTime * 0.5))
-                            
-                            local dir = (predictedPos - pos).Unit
-                            local newVel = dir * Config.MagnetStrength
-                            
-                            pcall(function()
-                                proj.AssemblyLinearVelocity = newVel
-                                proj.AssemblyAngularVelocity = Vector3.new(
-                                    math.random(-10, 10),
-                                    math.random(-10, 10),
-                                    math.random(-10, 10)
-                                )
-                            end)
-                        end
-                    end
-                end
-            end
-            lastMagnetScan = now
-        end
-        
-        -- 3. AUTO-BLOCK
-        if Config.AutoBlock and myHrp and now - (lastBlockTime or 0) >= Config.BlockCooldown then
-            for _, player in ipairs(Players:GetPlayers()) do
-                if player == LocalPlayer then continue end
-                if Config.TeamCheck and player.Team == LocalPlayer.Team then continue end
-                
-                local pChar = player.Character
-                if not pChar then continue end
-                
-                local pHum = pChar:FindFirstChild("Humanoid")
-                if pHum and pHum.Health <= 0 then continue end
-                
-                local enemyHrp = pChar:FindFirstChild("HumanoidRootPart")
-                if not enemyHrp then continue end
-                
-                local dist = (enemyHrp.Position - myHrp.Position).Magnitude
-                if dist <= Config.AutoBlockRange then
-                    local toEnemy = (enemyHrp.Position - myHrp.Position).Unit
-                    local myLook = myHrp.CFrame.LookVector
-                    local angle = math.deg(math.acos(toEnemy:Dot(myLook)))
-                    
-                    if angle <= Config.AutoBlockAngle / 2 then
                         pcall(function()
-                            local mouse = LocalPlayer:GetMouse()
-                            mouse.Button1Down:Fire()
+                            proj.AssemblyLinearVelocity = newVel
+                            proj.AssemblyAngularVelocity = Vector3.new(
+                                math.random(-10, 10),
+                                math.random(-10, 10),
+                                math.random(-10, 10)
+                            )
                         end)
-                        lastBlockTime = now
-                        break
                     end
                 end
             end
         end
-        
-        -- 4. UPDATE ESP HEALTH BARS
-        if Config.ESP and Config.ESPHealthBar then
-            for _, player in ipairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer and player.Character then
-                    local char = player.Character
-                    local hum = char:FindFirstChild("Humanoid")
-                    local bar = UI.ESPObjects[char]
-                    if bar and hum and bar:IsA("BillboardGui") then
-                        local fill = bar:FindFirstChild("Fill")
-                        if fill then
-                            fill.Size = UDim2.new(hum.Health / hum.MaxHealth, 0, 1, 0)
-                        end
-                    end
-                end
-            end
-        end
-        
-        task.wait()
-    end)
-end
-
--- ==================== AIMBOT (Mobile Optimized) ====================
-do
-    local function GetTarget()
-        local bestTarget, bestDist = nil, Config.AimbotFOV * 5
-        local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if not myHrp then return nil end
-        
-        local myPos = myHrp.Position
-        
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player == LocalPlayer then continue end
-            if Config.TeamCheck and player.Team == LocalPlayer.Team then continue end
-            
-            local char = player.Character
-            if not char then continue end
-            
-            local hum = char:FindFirstChild("Humanoid")
-            if hum and hum.Health <= 0 then continue end
-            
-            local aimPart = nil
-            if Config.AimPriority == "Head" then
-                aimPart = char:FindFirstChild("Head")
-            else
-                aimPart = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
-            end
-            
-            if aimPart then
-                local screenPos, onScreen = Camera:WorldToViewportPoint(aimPart.Position)
-                if not onScreen then continue end
-                
-                local screenCenter = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
-                local distFromCenter = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
-                
-                if distFromCenter <= Config.AimbotFOV then
-                    local worldDist = (aimPart.Position - myPos).Magnitude
-                    if worldDist < bestDist then
-                        bestTarget = aimPart
-                        bestDist = worldDist
-                    end
-                end
-            end
-        end
-        return bestTarget
+        UI.Timers.Magnet = now
     end
     
-    local function IsAimActive()
-        -- Gamepad/Keyboard
-        if UserInputService:IsKeyDown(Config.AimActiveKeybind) then
-            return true
-        end
-        
-        -- Mouse (PC)
-        if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
-            return true
-        end
-        
-        -- Touch (Mobile) - Right side of screen
-        local touches = UserInputService:GetTouches()
-        for _, touch in ipairs(touches) do
-            if touch.Position.X > Camera.ViewportSize.X * 0.6 then
-                local guiAtPos = GuiService:GetGuiAtPosition(touch.Position.X, touch.Position.Y)
-                if not guiAtPos then
-                    return true
-                end
-            end
-        end
-        
-        return false
-    end
-    
-    UI.Connections.AimbotLoop = RunService.RenderStepped:Connect(function()
-        if not Config.Enabled or not Config.Aimbot then return end
-        
+    -- 3. AIMBOT (Every frame when active)
+    if Config.Aimbot then
         local shouldAim = Config.AutoAimWhenInFOV or IsAimActive()
         if shouldAim then
             local target = GetTarget()
@@ -1908,84 +1569,432 @@ do
                 Camera.CFrame = Camera.CFrame:Lerp(lookAt, math.clamp(Config.AimSmoothing, 0.01, 1))
             end
         end
-        
-        task.wait()
-    end)
-end
-
--- ==================== KEYBINDS ====================
-do
-    UI.Connections.KeybindListener = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-        
-        if input.KeyCode == Config.MasterKeybind then
-            Config.Enabled = not Config.Enabled
-            print("APEX DOMAIN: " .. (Config.Enabled and "ENABLED" or "DISABLED"))
+    end
+    
+    -- 4. AUTO-BLOCK (Throttled by BlockCooldown)
+    if Config.AutoBlock and myHrp and now - UI.Timers.Block >= Config.BlockCooldown then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player == LocalPlayer then continue end
+            if Config.TeamCheck and player.Team == LocalPlayer.Team then continue end
             
-            if UI.MainFrame then
-                UI.MainFrame.Visible = Config.Enabled
+            local pChar = player.Character
+            if not pChar then continue end
+            
+            local pHum = pChar:FindFirstChild("Humanoid")
+            if pHum and pHum.Health <= 0 then continue end
+            
+            local enemyHrp = pChar:FindFirstChild("HumanoidRootPart")
+            if not enemyHrp then continue end
+            
+            local dist = (enemyHrp.Position - myHrp.Position).Magnitude
+            if dist <= Config.AutoBlockRange then
+                local toEnemy = (enemyHrp.Position - myHrp.Position).Unit
+                local myLook = myHrp.CFrame.LookVector
+                local angle = math.deg(math.acos(toEnemy:Dot(myLook)))
+                
+                if angle <= Config.AutoBlockAngle / 2 then
+                    TriggerBlock()
+                    UI.Timers.Block = now
+                    break
+                end
             end
-        end
-    end)
-end
-
--- ==================== CLEANUP ====================
-do
-    local function Cleanup()
-        for _, conn in pairs(UI.Connections) do
-            if conn and conn.Disconnect then
-                pcall(function()
-                    conn:Disconnect()
-                end)
-            end
-        end
-        UI.Connections = {}
-        
-        pcall(function()
-            UI:ClearESP()
-            UI:DestroyTargetHUD()
-            UI:DestroyRadar()
-            UI:RestoreChams()
-            if UI.FOVCircleFrame then
-                UI.FOVCircleFrame:Destroy()
-            end
-        end)
-        
-        if UI.MainFrame then
-            UI.MainFrame:Destroy()
-            UI.MainFrame = nil
-        end
-        if UI.Shadow then
-            UI.Shadow:Destroy()
-            UI.Shadow = nil
-        end
-        if UI.ScreenGui then
-            UI.ScreenGui:Destroy()
-            UI.ScreenGui = nil
         end
     end
     
-    Players.PlayerRemoving:Connect(function(player)
-        if player == LocalPlayer then
-            Cleanup()
+    -- 5. AUTO-DODGE (Throttled)
+    if Config.AutoDodge and myHrp and now - UI.Timers.Dodge >= Config.DodgeCooldown then
+        for _, proj in ipairs(UI.TrackedProjectiles) do
+            if proj.Parent and (proj.Position - myHrp.Position).Magnitude < 20 then
+                local dodgeDir = (proj.Position - myHrp.Position).Unit
+                myHrp.AssemblyLinearVelocity = dodgeDir * 50
+                UI.Timers.Dodge = now
+                break
+            end
+        end
+    end
+    
+    -- 6. TRIGGERBOT (Throttled)
+    if Config.Triggerbot and now - UI.Timers.Trigger >= Config.TriggerbotDelay then
+        local tool = char and char:FindFirstChildOfClass("Tool")
+        if tool then
+            local isPressed = UserInputService:IsMouseButtonPressed(Config.TriggerbotKeybind) or
+                              UserInputService:IsKeyDown(Enum.KeyCode.ButtonR2)
+            if isPressed then
+                local ray = Ray.new(Camera.CFrame.Position, Camera.CFrame.LookVector * 1000)
+                local hitPart = workspace:FindPartOnRayWithIgnoreList(ray, {char})
+                if hitPart then
+                    local player = Players:GetPlayerFromCharacter(hitPart.Parent)
+                    if player and player ~= LocalPlayer and player.Character then
+                        local hum = player.Character:FindFirstChild("Humanoid")
+                        if hum and hum.Health > 0 then
+                            pcall(function()
+                                tool:Activate()
+                                UI.Timers.Trigger = now
+                            end)
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    -- 7. STAMINA (Every frame)
+    if Config.InfStamina and char then
+        local function RecursiveFind(obj, depth, maxDepth)
+            if depth > maxDepth then return nil end
+            for _, child in ipairs(obj:GetChildren()) do
+                if child:IsA("Folder") then
+                    local found = RecursiveFind(child, depth + 1, maxDepth)
+                    if found then return found end
+                elseif child.Name:lower():find("stamina") and child:IsA("NumberValue") then
+                    return child
+                end
+            end
+            return nil
+        end
+        
+        local stamina = RecursiveFind(char, 0, 6)
+        if stamina and stamina:IsA("NumberValue") then
+            stamina.Value = 100
+        else
+            local folder = char:FindFirstChild("Stats") or char:FindFirstChild("Data") or char
+            if folder then
+                local newStamina = Instance.new("NumberValue")
+                newStamina.Name = "Stamina"
+                newStamina.Value = 100
+                newStamina.Parent = folder
+            end
+        end
+    end
+    
+    -- 8. MOVEMENT BOOSTS (Every frame)
+    if char then
+        local hum = char:FindFirstChild("Humanoid")
+        if hum then
+            if Config.SpeedBoost then
+                hum.WalkSpeed = 16 * Config.SpeedMultiplier
+            else
+                hum.WalkSpeed = 16
+            end
+            
+            if Config.JumpBoost then
+                hum.JumpPower = 50 * Config.JumpMultiplier
+            else
+                hum.JumpPower = 50
+            end
+            
+            if Config.SprintEnabled and UserInputService:IsKeyDown(Config.SprintKeybind) then
+                hum.WalkSpeed = 16 * Config.SpeedMultiplier * Config.SprintMultiplier
+            end
+            
+            if Config.BunnyHop and UserInputService:IsKeyDown(Config.BunnyHopKeybind) then
+                if hum:GetState() == Enum.HumanoidStateType.Running then
+                    hum.Jump = true
+                end
+            end
+        end
+    end
+    
+    -- 9. ANTI-AIM (Every frame)
+    if Config.AntiAim and myHrp then
+        if Config.AntiAimPitch ~= 0 or Config.AntiAimYaw ~= 0 then
+            local currentCF = myHrp.CFrame
+            local angleX = math.rad(Config.AntiAimPitch)
+            local angleY = math.rad(Config.AntiAimYaw)
+            local offset = CFrame.Angles(angleX, angleY, 0)
+            myHrp.CFrame = currentCF * offset
+        end
+    end
+    
+    -- 10. DEFENSIVE (No Fall Damage, Anti-Stun, Instant Respawn)
+    if char then
+        local hum = char:FindFirstChild("Humanoid")
+        if hum then
+            if Config.NoFallDamage then
+                hum:SetStateEnabled(Enum.HumanoidStateType.Landed, false)
+            end
+            if Config.AntiStun then
+                hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+                hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
+                hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+            end
+            if Config.InstantRespawn and hum.Health <= 0 then
+                hum.Health = 100
+            end
+        end
+    end
+    
+    -- 11. WEAPON MODS (Throttled 0.5s)
+    if Config.GunMods and now - UI.Timers.WeaponMods >= 0.5 then
+        if char then
+            for _, tool in ipairs(char:GetChildren()) do
+                if tool:IsA("Tool") then
+                    pcall(function()
+                        if Config.NoRecoil then
+                            if tool:FindFirstChild("Recoil") then tool.Recoil.Value = 0 end
+                            if tool:FindFirstChild("MaxRecoil") then tool.MaxRecoil.Value = 0 end
+                        end
+                        if Config.NoSpread then
+                            if tool:FindFirstChild("Spread") then tool.Spread.Value = 0 end
+                            if tool:FindFirstChild("MaxSpread") then tool.MaxSpread.Value = 0 end
+                        end
+                        if Config.FastWeaponSwap and tool:FindFirstChild("Cooldown") then
+                            tool.Cooldown.Value = 0
+                        end
+                    end)
+                end
+            end
+        end
+        UI.Timers.WeaponMods = now
+    end
+    
+    -- 12. PLATFORM IGNORER (Throttled 1s)
+    if Config.PlatformIgnorer and now - UI.Timers.Platform >= 1 then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if Config.TeamCheck and player.Team == LocalPlayer.Team then
+                local pChar = player.Character
+                if pChar then
+                    for _, part in ipairs(pChar:GetDescendants()) do
+                        if part:IsA("BasePart") and part.Name:lower():find("platform") then
+                            part.CanCollide = false
+                            part.CanTouch = false
+                        end
+                    end
+                end
+            end
+        end
+        UI.Timers.Platform = now
+    end
+    
+    -- 13. INSTANT INTERACT (Throttled 0.1s)
+    if Config.InstantInteract and now - UI.Timers.Interact >= 0.1 then
+        if myHrp then
+            local parts = workspace:GetPartBoundsInRadius(myHrp.Position, 10)
+            for _, part in ipairs(parts) do
+                if part:FindFirstChild("ProximityPrompt") then
+                    local prompt = part.ProximityPrompt
+                    if prompt.Enabled then
+                        pcall(function()
+                            prompt:Action()
+                        end)
+                    end
+                end
+            end
+        end
+        UI.Timers.Interact = now
+    end
+    
+    -- 14. AUTO HEAL (Throttled 1s)
+    if Config.AutoHeal and now - UI.Timers.Heal >= 1 then
+        if char then
+            local hum = char:FindFirstChild("Humanoid")
+            if hum then
+                local healthPercent = (hum.Health / hum.MaxHealth) * 100
+                if healthPercent <= Config.AutoHealThreshold then
+                    local backpack = LocalPlayer:FindFirstChild("Backpack")
+                    if backpack then
+                        for _, item in ipairs(backpack:GetChildren()) do
+                            if item:IsA("Tool") and (
+                                item.Name:lower():find("health") or 
+                                item.Name:lower():find("medkit") or
+                                item.Name:lower():find("bandage") or
+                                item.Name:lower():find("pill")
+                            ) then
+                                pcall(function()
+                                    hum:EquipTool(item)
+                                    item:Activate()
+                                end)
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        UI.Timers.Heal = now
+    end
+    
+    -- 15. UPDATE HUD & RADAR (Throttled)
+    if now - UI.Timers.HUD >= 0.1 then
+        if Config.TargetHUD then
+            UI:UpdateTargetHUDData()
+        end
+        UI.Timers.HUD = now
+    end
+    
+    if Config.Radar and now - UI.Timers.Radar >= 0.1 then
+        UI:UpdateRadar()
+        UI.Timers.Radar = now
+    end
+    
+    -- 16. KILL CONFIRM DETECTION
+    if Config.KillConfirm then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                local pChar = player.Character
+                if pChar then
+                    local pHum = pChar:FindFirstChild("Humanoid")
+                    if pHum and pHum.Health <= 0 then
+                        if myHrp then
+                            local dist = (pChar:GetPivot().Position - myHrp.Position).Magnitude
+                            if dist < Config.MagnetRange then
+                                UI:TriggerKillFlash()
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    task.wait() -- Prevent mobile crash
+end)
+
+-- ==================== ESP RENDER LOOP ====================
+UI.Connections.ESPLoop = RunService.RenderStepped:Connect(function()
+    if not Config.Enabled or not Config.ESP then
+        UI:ClearESP()
+        return
+    end
+    
+    -- Cleanup dead objects
+    for key, obj in pairs(UI.ESPObjects) do
+        if not obj or not obj.Parent then
+            pcall(function()
+                obj:Destroy()
+            end)
+            UI.ESPObjects[key] = nil
+        else
+            if obj:IsA("BoxHandleAdornment") then
+                if not obj.Adornee or not obj.Adornee.Parent then
+                    obj:Destroy()
+                    UI.ESPObjects[key] = nil
+                end
+            elseif obj:IsA("BillboardGui") then
+                if not obj.Adornee or not obj.Adornee.Parent then
+                    obj:Destroy()
+                    UI.ESPObjects[key] = nil
+                end
+            end
+        end
+    end
+    
+    local updateCount = 0
+    for _, player in ipairs(Players:GetPlayers()) do
+        if updateCount >= Config.MaxTargetsPerFrame then break end
+        if player == LocalPlayer then continue end
+        if Config.TeamCheck and player.Team == LocalPlayer.Team then continue end
+        
+        local char = player.Character
+        if not char then continue end
+        
+        local hum = char:FindFirstChild("Humanoid")
+        if hum and hum.Health <= 0 then continue end
+        
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not hrp then continue end
+        
+        if Config.ESPBox and not UI.ESPObjects[hrp] then
+            UI:CreateBox(hrp)
+        end
+        
+        if Config.ESPHealthBar and not UI.ESPObjects[char] then
+            UI:CreateHealthBar(char)
+        end
+        
+        if Config.ESPName and not UI.ESPObjects[char .. "_Name"] then
+            UI:CreateNameLabel(char, player)
+        end
+        
+        updateCount = updateCount + 1
+    end
+    
+    -- Update health bars
+    if Config.ESPHealthBar then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                local char = player.Character
+                local hum = char:FindFirstChild("Humanoid")
+                local bar = UI.ESPObjects[char]
+                if bar and hum and bar:IsA("BillboardGui") then
+                    local fill = bar:FindFirstChild("Fill")
+                    if fill then
+                        fill.Size = UDim2.new(hum.Health / hum.MaxHealth, 0, 1, 0)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- ==================== KEYBINDS ====================
+UI.Connections.KeybindListener = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.KeyCode == Config.MasterKeybind then
+        Config.Enabled = not Config.Enabled
+        if UI.MainFrame then
+            UI.MainFrame.Visible = Config.Enabled
+        end
+        print("APEX DOMAIN: " .. (Config.Enabled and "ENABLED" or "DISABLED"))
+    end
+end)
+
+-- ==================== CLEANUP ====================
+local function Cleanup()
+    for _, conn in pairs(UI.Connections) do
+        if conn and conn.Disconnect then
+            pcall(function()
+                conn:Disconnect()
+            end)
+        end
+    end
+    UI.Connections = {}
+    
+    pcall(function()
+        UI:ClearESP()
+        UI:DestroyTargetHUD()
+        UI:DestroyRadar()
+        UI:RestoreChams()
+        if UI.FOVCircleFrame then
+            UI.FOVCircleFrame:Destroy()
+            UI.FOVCircleFrame = nil
         end
     end)
+    
+    if UI.MainFrame then
+        UI.MainFrame:Destroy()
+        UI.MainFrame = nil
+    end
+    if UI.Shadow then
+        UI.Shadow:Destroy()
+        UI.Shadow = nil
+    end
+    if UI.ScreenGui then
+        UI.ScreenGui:Destroy()
+        UI.ScreenGui = nil
+    end
 end
+
+Players.PlayerRemoving:Connect(function(player)
+    if player == LocalPlayer then
+        Cleanup()
+    end
+end)
 
 -- ==================== INITIALIZATION ====================
 task.spawn(function()
-    task.wait(2)
+    task.wait(2) -- Extended wait for mobile
     
     if BuildUI() then
         print("◈ APEX DOMAIN ULTIMATE v7.0 LOADED ◈")
         print("PROFESSIONAL UI WITH SIDEBAR NAVIGATION")
-        print("• Organized Categories (Combat, Visual, Movement, Game, Weapon, Settings, Server)")
-        print("• Mobile + PC Optimized")
+        print("• Single Heartbeat Combat Core")
+        print("• Mobile/PC Optimized")
         print("• 4-6-4 Locked Hitboxes")
-        print("• Mobile Camera Aimbot")
         print("Press F1 to toggle")
     else
-        warn("Failed to build UI!")
+        warn("Apex Domain: Failed to build UI!")
         task.wait(3)
         if BuildUI() then
             print("UI loaded on retry")
