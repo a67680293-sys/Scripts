@@ -450,14 +450,13 @@ local function BuildUI()
     return true
 end
 
--- ============ UI HELPER FUNCTIONS ============
-      -- ============ UI HELPER FUNCTIONS (FIXED & VISIBLE) ============
+-- ============ UI HELPER FUNCTIONS (FIXED & VISIBLE) ============
 function UI:CreateToggle(parent, text, key, defaultValue)
     local toggleFrame = Instance.new("Frame")
     toggleFrame.Name = "Toggle_" .. text:gsub("%s+", "_")
     toggleFrame.Size = UDim2.new(1, 0, 0, 40)
     toggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-    toggleFrame.ZIndex = 5 -- Element Layer
+    toggleFrame.ZIndex = 5 
     toggleFrame.Parent = parent
     Instance.new("UICorner", toggleFrame).CornerRadius = UDim.new(0, 6)
     
@@ -470,7 +469,7 @@ function UI:CreateToggle(parent, text, key, defaultValue)
     btn.TextSize = 14
     btn.TextXAlignment = Enum.TextXAlignment.Left
     btn.BackgroundColor3 = defaultValue and Color3.fromRGB(50, 50, 60) or Color3.fromRGB(40, 40, 50)
-    btn.ZIndex = 6 -- Interactive Layer
+    btn.ZIndex = 6 
     btn.Parent = toggleFrame
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     
@@ -479,7 +478,7 @@ function UI:CreateToggle(parent, text, key, defaultValue)
     indicator.Size = UDim2.new(0, 16, 0, 16)
     indicator.Position = UDim2.new(1, -30, 0.5, -8)
     indicator.BackgroundColor3 = defaultValue and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(150, 0, 0)
-    indicator.ZIndex = 7 -- Top Layer
+    indicator.ZIndex = 7
     indicator.BorderSizePixel = 0
     indicator.Parent = btn
     Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
@@ -491,7 +490,7 @@ function UI:CreateToggle(parent, text, key, defaultValue)
         indicator.BackgroundColor3 = Config[key] and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(150, 0, 0)
         btn.BackgroundColor3 = Config[key] and Color3.fromRGB(50, 50, 60) or Color3.fromRGB(40, 40, 50)
         
-        -- Logic Handlers
+        -- Logic Handlers (Wrapped correctly inside the button click)
         if key == "ESP" then
             if Config.ESP then self:CreateESPAll() else self:ClearESP() end
         elseif key == "FOVCircle" then
