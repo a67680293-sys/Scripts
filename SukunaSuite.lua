@@ -451,12 +451,13 @@ local function BuildUI()
 end
 
 -- ============ UI HELPER FUNCTIONS ============
-        function UI:CreateToggle(parent, text, key, defaultValue)
+      -- ============ UI HELPER FUNCTIONS (FIXED & VISIBLE) ============
+function UI:CreateToggle(parent, text, key, defaultValue)
     local toggleFrame = Instance.new("Frame")
     toggleFrame.Name = "Toggle_" .. text:gsub("%s+", "_")
     toggleFrame.Size = UDim2.new(1, 0, 0, 40)
     toggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-    toggleFrame.ZIndex = 5
+    toggleFrame.ZIndex = 5 -- Element Layer
     toggleFrame.Parent = parent
     Instance.new("UICorner", toggleFrame).CornerRadius = UDim.new(0, 6)
     
@@ -469,55 +470,38 @@ end
     btn.TextSize = 14
     btn.TextXAlignment = Enum.TextXAlignment.Left
     btn.BackgroundColor3 = defaultValue and Color3.fromRGB(50, 50, 60) or Color3.fromRGB(40, 40, 50)
-    btn.ZIndex = 6
+    btn.ZIndex = 6 -- Interactive Layer
     btn.Parent = toggleFrame
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     
     local indicator = Instance.new("Frame")
+    indicator.Name = "Indicator"
     indicator.Size = UDim2.new(0, 16, 0, 16)
     indicator.Position = UDim2.new(1, -30, 0.5, -8)
     indicator.BackgroundColor3 = defaultValue and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(150, 0, 0)
-    indicator.ZIndex = 7
+    indicator.ZIndex = 7 -- Top Layer
+    indicator.BorderSizePixel = 0
     indicator.Parent = btn
     Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
     
     Config[key] = defaultValue
+    
     btn.MouseButton1Click:Connect(function()
         Config[key] = not Config[key]
         indicator.BackgroundColor3 = Config[key] and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(150, 0, 0)
         btn.BackgroundColor3 = Config[key] and Color3.fromRGB(50, 50, 60) or Color3.fromRGB(40, 40, 50)
         
-        -- ALL YOUR SPECIAL HANDLERS (ESP, TargetHUD, etc.) STAY HERE
-    end)
-end
-
-        -- Special handlers
+        -- Logic Handlers
         if key == "ESP" then
-            if Config.ESP then
-                self:CreateESPAll()
-            else
-                self:ClearESP()
-            end
+            if Config.ESP then self:CreateESPAll() else self:ClearESP() end
         elseif key == "FOVCircle" then
             self:UpdateFOVCircle()
         elseif key == "TargetHUD" then
-            if Config.TargetHUD then
-                self:CreateTargetHUD()
-            else
-                self:DestroyTargetHUD()
-            end
+            if Config.TargetHUD then self:CreateTargetHUD() else self:DestroyTargetHUD() end
         elseif key == "Radar" then
-            if Config.Radar then
-                self:CreateRadar()
-            else
-                self:DestroyRadar()
-            end
+            if Config.Radar then self:CreateRadar() else self:DestroyRadar() end
         elseif key == "Chams" then
-            if Config.Chams then
-                self:ApplyChams()
-            else
-                self:RestoreChams()
-            end
+            if Config.Chams then self:ApplyChams() else self:RestoreChams() end
         end
     end)
 end
