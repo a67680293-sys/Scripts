@@ -39,7 +39,7 @@ local Config = {
     
     -- Triggerbot
     Triggerbot = false,
-    TriggerbotKeybind = Enum.MouseButton1,
+    TriggerbotKeybind = Enum.UserInputType.MouseButton1,
     TriggerbotDelay = 0,
     
     -- Auto-Block
@@ -1622,13 +1622,18 @@ UI.Connections.MasterCombatLoop = RunService.Heartbeat:Connect(function()
             end
         end
     end
-    
-    -- 6. TRIGGERBOT (Throttled)
+        -- 6. TRIGGERBOT (STABLE FIX)
     if Config.Triggerbot and now - UI.Timers.Trigger >= Config.TriggerbotDelay then
         local tool = char and char:FindFirstChildOfClass("Tool")
         if tool then
-            local isPressed = UserInputService:IsMouseButtonPressed(Config.TriggerbotKeybind) or
-                              UserInputService:IsKeyDown(Enum.KeyCode.ButtonR2)
+            local isPressed = false
+            
+            -- Safe pcall check for Mouse/Touch/Gamepad
+            pcall(function()
+                isPressed = UserInputService:IsMouseButtonPressed(Config.TriggerbotKeybind) or
+                            UserInputService:IsKeyDown(Enum.KeyCode.ButtonR2)
+            end)
+
             if isPressed then
                 local ray = Ray.new(Camera.CFrame.Position, Camera.CFrame.LookVector * 1000)
                 local hitPart = workspace:FindPartOnRayWithIgnoreList(ray, {char})
