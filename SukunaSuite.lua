@@ -207,8 +207,7 @@ local function BuildUI()
         Instance.new("UICorner", shadow).CornerRadius = UDim.new(0, 14)
         UI.Shadow = shadow
     end
-    
-    -- SIDEBAR
+        -- SIDEBAR
     local sidebar = Instance.new("Frame")
     sidebar.Name = "Sidebar"
     sidebar.Size = UDim2.new(0, 200, 1, 0)
@@ -230,6 +229,7 @@ local function BuildUI()
     header.Font = Enum.Font.GothamBlack
     header.TextSize = 18
     header.BorderSizePixel = 0
+    header.ZIndex = 3
     header.TextXAlignment = Enum.TextXAlignment.Left
     header.TextYAlignment = Enum.TextYAlignment.Center
     header.Padding = UDim.new(0, 15)
@@ -242,6 +242,7 @@ local function BuildUI()
     divider.Position = UDim2.new(0, 0, 0, 62)
     divider.BackgroundColor3 = Config.UIRedTheme and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(100, 150, 255)
     divider.BorderSizePixel = 0
+    divider.ZIndex = 3
     divider.Parent = sidebar
     
     -- SIDEBAR BUTTONS
@@ -271,27 +272,22 @@ local function BuildUI()
         btn.TextXAlignment = Enum.TextXAlignment.Left
         btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
         btn.BorderSizePixel = 0
+        btn.ZIndex = 4
         btn.Parent = sidebar
         Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
         UI.SidebarButtons[category.Key] = btn
         
-        -- Hover effect
+        -- HOVER EFFECTS (RESTORED)
         btn.MouseEnter:Connect(function()
             if UI.ActiveCategory ~= category.Key then
-                TweenService:Create(btn, TweenInfo.new(0.2), {
-                    BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-                }):Play()
+                TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 60, 70)}):Play()
             end
         end)
-        
         btn.MouseLeave:Connect(function()
             if UI.ActiveCategory ~= category.Key then
-                TweenService:Create(btn, TweenInfo.new(0.2), {
-                    BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-                }):Play()
+                TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 40, 50)}):Play()
             end
         end)
-        
         btn.MouseButton1Click:Connect(function()
             UI:SwitchCategory(category.Key)
         end)
@@ -325,16 +321,17 @@ local function BuildUI()
     
     closeBtn.MouseButton1Click:Connect(function()
         UI.MainFrame.Visible = false
-    end)
+    end) 
     
-    -- CONTENT AREA
+        -- CONTENT AREA
     local contentArea = Instance.new("Frame")
     contentArea.Name = "ContentArea"
-    contentArea.Size = UDim2.new(0, 700, 1, 0)
+    -- Fixed: Using Scale (1, -200) so it never covers the Sidebar
+    contentArea.Size = UDim2.new(1, -200, 1, 0)
     contentArea.Position = UDim2.new(0, 200, 0, 0)
     contentArea.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
     contentArea.BorderSizePixel = 0
-    contentArea.ZIndex = 1
+    contentArea.ZIndex = 1 -- Background should be lowest
     contentArea.Parent = mainFrame
     Instance.new("UICorner", contentArea).CornerRadius = UDim.new(0, 8)
     
@@ -454,14 +451,14 @@ local function BuildUI()
 end
 
 -- ============ UI HELPER FUNCTIONS ============
-function UI:CreateToggle(parent, text, key, defaultValue)
+        function UI:CreateToggle(parent, text, key, defaultValue)
     local toggleFrame = Instance.new("Frame")
     toggleFrame.Name = "Toggle_" .. text:gsub("%s+", "_")
     toggleFrame.Size = UDim2.new(1, 0, 0, 40)
     toggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-    toggleFrame.BorderSizePixel = 0
-    Instance.new("UICorner", toggleFrame).CornerRadius = UDim.new(0, 6)
+    toggleFrame.ZIndex = 5
     toggleFrame.Parent = parent
+    Instance.new("UICorner", toggleFrame).CornerRadius = UDim.new(0, 6)
     
     local btn = Instance.new("TextButton")
     btn.Name = "Button"
@@ -472,26 +469,28 @@ function UI:CreateToggle(parent, text, key, defaultValue)
     btn.TextSize = 14
     btn.TextXAlignment = Enum.TextXAlignment.Left
     btn.BackgroundColor3 = defaultValue and Color3.fromRGB(50, 50, 60) or Color3.fromRGB(40, 40, 50)
-    btn.BorderSizePixel = 0
+    btn.ZIndex = 6
     btn.Parent = toggleFrame
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     
     local indicator = Instance.new("Frame")
-    indicator.Name = "Indicator"
     indicator.Size = UDim2.new(0, 16, 0, 16)
     indicator.Position = UDim2.new(1, -30, 0.5, -8)
     indicator.BackgroundColor3 = defaultValue and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(150, 0, 0)
-    indicator.BorderSizePixel = 0
-    Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
+    indicator.ZIndex = 7
     indicator.Parent = btn
+    Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
     
     Config[key] = defaultValue
-    
     btn.MouseButton1Click:Connect(function()
         Config[key] = not Config[key]
         indicator.BackgroundColor3 = Config[key] and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(150, 0, 0)
         btn.BackgroundColor3 = Config[key] and Color3.fromRGB(50, 50, 60) or Color3.fromRGB(40, 40, 50)
         
+        -- ALL YOUR SPECIAL HANDLERS (ESP, TargetHUD, etc.) STAY HERE
+    end)
+end
+
         -- Special handlers
         if key == "ESP" then
             if Config.ESP then
